@@ -14,8 +14,8 @@ api.interceptors.request.use((config) => {
 
 // --- Auth ---
 export const authApi = {
-  googleLogin: (idToken: string) =>
-    api.post("/auth/google", { id_token: idToken }).then((r) => r.data),
+  googleLogin: (payload: { id_token?: string; code?: string }) =>
+    api.post("/auth/google", payload).then((r) => r.data),
   me: () => api.get("/auth/me").then((r) => r.data),
   logout: () => api.post("/auth/logout").then((r) => r.data),
 };

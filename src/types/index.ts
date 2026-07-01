@@ -3,6 +3,7 @@ export type AuthUser = {
   name: string;
   email: string;
   avatarUrl?: string;
+  hasGmailAccess?: boolean;
 };
 
 export type Resume = {

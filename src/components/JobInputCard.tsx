@@ -31,7 +31,7 @@ export default function JobInputCard() {
     if (tab === "file" && file) generate({ type: "file", file });
   }
 
-  const canGenerate = (tab === "text" && text.trim().length > 20) || (tab === "url" && url.trim().length > 5) || (tab === "file" && !!file);
+  const canGenerate = (tab === "text" && text.trim().length > 0) || (tab === "url" && url.trim().length > 0) || (tab === "file" && !!file);
 
   return (
     <Card className="border-border/80 shadow-sm">

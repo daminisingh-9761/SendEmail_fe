@@ -11,9 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { useDraftStore } from "@/store/applicationStore";
 import { useResumeStore } from "@/store/resumeStore";
-import { applicationApi } from "@/lib/api";
+import { useAuthStore } from "@/store/authStore";
+import { applicationApi, authApi } from "@/lib/api";
 import { toast } from "@/components/ui/toaster";
-import { Send, Paperclip, MapPin, Building2, AlertCircle, Loader2 } from "lucide-react";
+import { Send, Paperclip, MapPin, Building2, AlertCircle, Loader2, Mail } from "lucide-react";
+import { useGoogleLogin } from "@react-oauth/google";
 
 const schema = z.object({
   recipientEmail: z.string().email("Enter a valid email address"),
@@ -25,8 +27,33 @@ type FormValues = z.infer<typeof schema>;
 export default function EmailEditor() {
   const { extractedJob, generatedEmail, recipientEmail, reset } = useDraftStore();
   const { resumes, selectedResumeId } = useResumeStore();
+  const { user, setSession } = useAuthStore();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [connectingGmail, setConnectingGmail] = useState(false);
+
+  const connectGmail = useGoogleLogin({
+    flow: "auth-code",
+    scope: [
+      "openid",
+      "email",
+      "profile",
+      "https://www.googleapis.com/auth/gmail.send",
+    ].join(" "),
+    onSuccess: async (codeResponse) => {
+      setConnectingGmail(true);
+      try {
+        const { user: updatedUser, token } = await authApi.googleLogin({ code: codeResponse.code });
+        setSession(updatedUser, token);
+        toast({ title: "Gmail connected", description: "You can now send emails.", variant: "success" });
+      } catch {
+        toast({ title: "Failed to connect Gmail", description: "Please try again.", variant: "error" });
+      } finally {
+        setConnectingGmail(false);
+      }
+    },
+    onError: () => toast({ title: "Gmail connection failed", variant: "error" }),
+  });
 
   const resume = resumes.find((r) => r.id === selectedResumeId);
 
@@ -130,10 +157,17 @@ export default function EmailEditor() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button type="submit" variant="accent" size="lg" className="flex-1 gap-2" disabled={sending || sent}>
-                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {sent ? "Sent" : sending ? "Sending…" : "Send email"}
-              </Button>
+              {!user?.hasGmailAccess ? (
+                <Button type="button" variant="accent" size="lg" className="flex-1 gap-2" disabled={connectingGmail} onClick={() => connectGmail()}>
+                  {connectingGmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                  {connectingGmail ? "Connecting…" : "Connect Gmail to Send"}
+                </Button>
+              ) : (
+                <Button type="submit" variant="accent" size="lg" className="flex-1 gap-2" disabled={sending || sent}>
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  {sent ? "Sent" : sending ? "Sending…" : "Send email"}
+                </Button>
+              )}
               <Button type="button" variant="outline" size="lg" onClick={reset}>
                 Start over
               </Button>
