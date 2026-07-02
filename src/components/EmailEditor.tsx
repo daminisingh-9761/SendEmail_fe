@@ -26,7 +26,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function EmailEditor() {
   const { extractedJob, generatedEmail, recipientEmail, reset } = useDraftStore();
-  const { resumes, selectedResumeId } = useResumeStore();
+  const { resumes, selectedResumeId, clearSelectedResume } = useResumeStore();
   const { user, setSession } = useAuthStore();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -168,7 +168,7 @@ export default function EmailEditor() {
                   {sent ? "Sent" : sending ? "Sending…" : "Send email"}
                 </Button>
               )}
-              <Button type="button" variant="outline" size="lg" onClick={reset}>
+              <Button type="button" variant="outline" size="lg" onClick={() => { reset(); clearSelectedResume(); }}>
                 Start over
               </Button>
             </div>

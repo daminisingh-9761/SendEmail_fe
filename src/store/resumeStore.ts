@@ -7,14 +7,16 @@ type ResumeState = {
   setResumes: (r: Resume[]) => void;
   addResume: (r: Resume) => void;
   selectResume: (id: string) => void;
+  clearSelectedResume: () => void;
 };
 
 export const useResumeStore = create<ResumeState>((set) => ({
   resumes: [],
   selectedResumeId: null,
   setResumes: (resumes) =>
-    set({ resumes, selectedResumeId: resumes.find((r) => r.isDefault)?.id ?? resumes[0]?.id ?? null }),
+    set({ resumes, selectedResumeId: null }),
   addResume: (r) =>
     set((s) => ({ resumes: [r, ...s.resumes], selectedResumeId: r.id })),
   selectResume: (id) => set({ selectedResumeId: id }),
+  clearSelectedResume: () => set({ selectedResumeId: null }),
 }));
