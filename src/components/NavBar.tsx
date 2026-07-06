@@ -1,7 +1,9 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Mail, History, LogOut } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
+import { useDraftStore } from "@/store/applicationStore";
+import { useResumeStore } from "@/store/resumeStore";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,8 +14,21 @@ import {
 
 export default function NavBar() {
   const { user, logout } = useAuthStore();
-  const { openLogin } = useUiStore();
+  const { openLogin, incrementSessionKey } = useUiStore();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const resetDraft = useDraftStore((s) => s.reset);
+  const clearSelectedResume = useResumeStore((s) => s.clearSelectedResume);
+
+  const handleNewApplication = (e: React.MouseEvent) => {
+    e.preventDefault();
+    resetDraft();
+    clearSelectedResume();
+    incrementSessionKey();
+    if (pathname !== "/") {
+      navigate("/");
+    }
+  };
 
   return (
     <header className="border-b border-border bg-card/70 backdrop-blur sticky top-0 z-40">
@@ -26,11 +41,11 @@ export default function NavBar() {
         </Link>
 
         <nav className="flex items-center gap-1">
-          <Link to="/">
+          <a href="/" onClick={handleNewApplication}>
             <Button variant={pathname === "/" ? "secondary" : "ghost"} size="sm">
               New application
             </Button>
-          </Link>
+          </a>
           <Link to="/history">
             <Button variant={pathname === "/history" ? "secondary" : "ghost"} size="sm" className="gap-1.5">
               <History className="h-3.5 w-3.5" /> History
@@ -41,11 +56,9 @@ export default function NavBar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="ml-2 flex items-center gap-2 rounded-full border border-border pl-1 pr-3 py-1">
-                  <img
-                    src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${user.name}`}
-                    className="h-7 w-7 rounded-full"
-                    alt={user.name}
-                  />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-300 text-sm font-semibold text-slate-700">
+                    {user.name?.charAt(0).toUpperCase()}
+                  </div>
                   <span className="text-sm font-medium">{user.name.split(" ")[0]}</span>
                 </button>
               </DropdownMenuTrigger>

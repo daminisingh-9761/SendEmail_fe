@@ -57,4 +57,6 @@ export const applicationApi = {
     api.post(`/applications/${id}/send`, payload).then((r) => r.data),
   resend: (id: string) => api.post(`/applications/${id}/resend`).then((r) => r.data),
   followUp: (id: string) => api.post(`/applications/${id}/follow-up`).then((r) => r.data),
+  regenerate: (id: string) => api.post(`/applications/${id}/regenerate`).then((r) => r.data),
+  edit: (id: string, payload: { instruction: string }) => api.post(`/applications/${id}/edit`, payload).then((r) => r.data),
 };

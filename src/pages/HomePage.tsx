@@ -2,12 +2,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import JobInputCard from "@/components/JobInputCard";
 import EmailEditor from "@/components/EmailEditor";
 import { useDraftStore } from "@/store/applicationStore";
+import { useUiStore } from "@/store/uiStore";
 
 export default function HomePage() {
   const { extractedJob } = useDraftStore();
+  const { sessionKey } = useUiStore();
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12 sm:py-16">
+    <div key={sessionKey} className="mx-auto max-w-2xl px-6 py-12 sm:py-16">
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}

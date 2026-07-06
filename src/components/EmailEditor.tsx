@@ -25,13 +25,15 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function EmailEditor() {
-  const { extractedJob, generatedEmail, recipientEmail, reset } = useDraftStore();
+  const { extractedJob, generatedEmail, recipientEmail, reset, setGeneratedEmail } = useDraftStore();
   const { resumes, selectedResumeId, clearSelectedResume } = useResumeStore();
   const { user, setSession } = useAuthStore();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [connectingGmail, setConnectingGmail] = useState(false);
-
+  const [regenerating, setRegenerating] = useState(false);
+  const [instruction, setInstruction] = useState("");
+  const [editing, setEditing] = useState(false);
   const connectGmail = useGoogleLogin({
     flow: "auth-code",
     scope: [
@@ -60,6 +62,7 @@ export default function EmailEditor() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -84,6 +87,39 @@ export default function EmailEditor() {
       toast({ title: "Couldn't send the email", description: "Please try again.", variant: "error" });
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleRegenerate() {
+    if (!extractedJob) return;
+    setRegenerating(true);
+    try {
+      const updatedApp = await applicationApi.regenerate(extractedJob.id);
+      setGeneratedEmail({ subject: updatedApp.email.subject, body: updatedApp.email.body });
+      setValue("subject", updatedApp.email.subject);
+      setValue("body", updatedApp.email.body);
+      toast({ title: "Email regenerated", description: "A new version of the email is ready.", variant: "success" });
+    } catch {
+      toast({ title: "Couldn't regenerate", description: "Please try again.", variant: "error" });
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  async function handleEdit() {
+    if (!extractedJob || !instruction.trim()) return;
+    setEditing(true);
+    try {
+      const updatedApp = await applicationApi.edit(extractedJob.id, { instruction });
+      setGeneratedEmail({ subject: updatedApp.email.subject, body: updatedApp.email.body });
+      setValue("subject", updatedApp.email.subject);
+      setValue("body", updatedApp.email.body);
+      setInstruction("");
+      toast({ title: "Email updated", description: "AI applied your changes.", variant: "success" });
+    } catch {
+      toast({ title: "Couldn't apply changes", description: "Please try again.", variant: "error" });
+    } finally {
+      setEditing(false);
     }
   }
 
@@ -148,6 +184,36 @@ export default function EmailEditor() {
               {errors.body && <p className="mt-1 text-xs text-destructive">{errors.body.message}</p>}
             </div>
 
+            <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+              <Label htmlFor="instruction" className="text-sm font-semibold flex items-center gap-2">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/10 text-accent">✨</span>
+                AI Instructions
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="instruction"
+                  placeholder='e.g., "make it more professional", "shorten it"'
+                  value={instruction}
+                  onChange={(e) => setInstruction(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleEdit();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={editing || !instruction.trim()}
+                  onClick={handleEdit}
+                >
+                  {editing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                  {editing ? "Applying…" : "Apply AI Changes"}
+                </Button>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 px-3 py-2.5">
               <span className="flex items-center gap-2 text-sm">
                 <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
@@ -168,8 +234,9 @@ export default function EmailEditor() {
                   {sent ? "Sent" : sending ? "Sending…" : "Send email"}
                 </Button>
               )}
-              <Button type="button" variant="outline" size="lg" onClick={() => { reset(); clearSelectedResume(); }}>
-                Start over
+              <Button type="button" variant="outline" size="lg" disabled={regenerating || sending || sent} onClick={handleRegenerate}>
+                {regenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                {regenerating ? "Regenerating…" : "Regenerate"}
               </Button>
             </div>
           </form>
