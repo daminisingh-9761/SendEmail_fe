@@ -33,14 +33,21 @@ export default function ResumeModal() {
     setUploading(true);
     try {
       const resume = await resumeApi.upload(file);
+      await resumeApi.setDefault(resume.id);
+      resume.isDefault = true;
       addResume(resume);
       toast({ title: "Resume uploaded", description: file.name, variant: "success" });
+
+      if (pendingAction === "generate") {
+        closeResumeModal();
+        clearPending();
+      }
     } catch {
       toast({ title: "Upload failed", description: "Try a PDF or DOCX under 10MB.", variant: "error" });
     } finally {
       setUploading(false);
     }
-  }, [addResume]);
+  }, [addResume, pendingAction, closeResumeModal, clearPending]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

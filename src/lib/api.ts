@@ -45,7 +45,7 @@ export const jobApi = {
     }
     return api.post("/jobs/extract", payload).then((r) => r.data);
   },
-  generateEmail: (payload: { jobId: string; resumeId: string }) =>
+  generateEmail: (payload: { jobId: string; resumeId?: string }) =>
     api.post("/jobs/generate-email", payload).then((r) => r.data),
 };
 
