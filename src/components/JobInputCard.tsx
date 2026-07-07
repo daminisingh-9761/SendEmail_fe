@@ -37,7 +37,7 @@ export default function JobInputCard() {
     <Card className="border-border/80 shadow-sm">
       <CardContent className="p-6 sm:p-8">
         <Tabs value={tab} onValueChange={(v) => setTab(v as JobInputType)}>
-          <TabsList>
+          <TabsList className="h-auto flex-wrap sm:flex-nowrap">
             <TabsTrigger value="text" className="gap-1.5"><Type className="h-3.5 w-3.5" /> Paste text</TabsTrigger>
             <TabsTrigger value="file" className="gap-1.5"><FileText className="h-3.5 w-3.5" /> Upload file</TabsTrigger>
             <TabsTrigger value="url" className="gap-1.5"><Link2 className="h-3.5 w-3.5" /> Job URL</TabsTrigger>

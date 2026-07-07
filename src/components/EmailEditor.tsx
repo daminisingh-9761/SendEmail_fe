@@ -16,6 +16,8 @@ import { applicationApi, authApi } from "@/lib/api";
 import { toast } from "@/components/ui/toaster";
 import { Send, Paperclip, MapPin, Building2, AlertCircle, Loader2, Mail } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
+import { useNavigate } from "react-router-dom";
+import { useUiStore } from "@/store/uiStore";
 
 const schema = z.object({
   recipientEmail: z.string().email("Enter a valid email address"),
@@ -28,6 +30,8 @@ export default function EmailEditor() {
   const { extractedJob, generatedEmail, recipientEmail, reset, setGeneratedEmail } = useDraftStore();
   const { resumes, selectedResumeId, clearSelectedResume } = useResumeStore();
   const { user, setSession } = useAuthStore();
+  const { incrementSessionKey } = useUiStore();
+  const navigate = useNavigate();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [connectingGmail, setConnectingGmail] = useState(false);
@@ -73,7 +77,19 @@ export default function EmailEditor() {
     },
   });
 
-  if (!extractedJob || !generatedEmail) return null;
+  if (!extractedJob) return null;
+  
+  if (!generatedEmail) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="flex flex-col items-center justify-center py-24 text-center">
+        <Loader2 className="h-10 w-10 animate-spin text-accent mb-4" />
+        <h3 className="text-xl font-medium tracking-tight">Drafting your email...</h3>
+        <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+          Our AI is reading the job requirements and highlighting your best experience from your resume.
+        </p>
+      </motion.div>
+    );
+  }
 
   async function onSubmit(values: FormValues) {
     setSending(true);
@@ -83,6 +99,11 @@ export default function EmailEditor() {
       await applicationApi.send(extractedJob!.id, values);
       setSent(true);
       toast({ title: "Email sent", description: `Your application went to ${values.recipientEmail}`, variant: "success" });
+      
+      reset();
+      clearSelectedResume();
+      incrementSessionKey();
+      navigate("/");
     } catch {
       toast({ title: "Couldn't send the email", description: "Please try again.", variant: "error" });
     } finally {
@@ -127,7 +148,7 @@ export default function EmailEditor() {
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div>
               <CardTitle>{extractedJob.jobTitle}</CardTitle>
               <CardDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -189,7 +210,7 @@ export default function EmailEditor() {
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/10 text-accent">✨</span>
                 AI Instructions
               </Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   id="instruction"
                   placeholder='e.g., "make it more professional", "shorten it"'
@@ -222,7 +243,7 @@ export default function EmailEditor() {
               <Badge variant="outline">Attached</Badge>
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
               {!user?.hasGmailAccess ? (
                 <Button type="button" variant="accent" size="lg" className="flex-1 gap-2" disabled={connectingGmail} onClick={() => connectGmail()}>
                   {connectingGmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}

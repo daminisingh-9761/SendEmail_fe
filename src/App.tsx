@@ -6,6 +6,8 @@ import NavBar from "@/components/NavBar";
 import { Toaster } from "@/components/ui/toaster";
 import LoginModal from "@/components/LoginModal";
 import ResumeModal from "@/components/ResumeModal";
+import InstallBanner from "@/components/InstallBanner";
+
 
 export default function App() {
   return (
@@ -21,6 +23,7 @@ export default function App() {
       {/* Global modals, driven by zustand state so they can be triggered from anywhere */}
       <LoginModal />
       <ResumeModal />
+      <InstallBanner />
       <Toaster />
     </div>
   );
