@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,11 +8,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { FileText, Sparkles, Loader2, Plus, Image as ImageIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGenerateApplication } from "@/hooks/useGenerateApplication";
+import { useUiStore } from "@/store/uiStore";
+import { useResumeStore } from "@/store/resumeStore";
 
 export default function JobInputCard() {
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const { generate, loading } = useGenerateApplication();
+  
+  const { resumeModalOpen, openResumeModal } = useUiStore();
+  const { resumes } = useResumeStore();
+  const [waitingForResume, setWaitingForResume] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -30,10 +36,14 @@ export default function JobInputCard() {
 
   function handleGenerate() {
     if (file) {
+      if (resumes.length === 0) setWaitingForResume(true);
       generate({ type: "file", file });
     } else {
       const input = text.trim();
       const isUrl = /^(https?:\/\/[^\s]+)$/i.test(input);
+      
+      if (resumes.length === 0) setWaitingForResume(true);
+      
       if (isUrl) {
         generate({ type: "url", url: input });
       } else {
@@ -41,6 +51,14 @@ export default function JobInputCard() {
       }
     }
   }
+
+  // Auto-continue generating once the resume is uploaded (and the modal closes)
+  useEffect(() => {
+    if (waitingForResume && !resumeModalOpen && resumes.length > 0) {
+      setWaitingForResume(false);
+      handleGenerate();
+    }
+  }, [resumeModalOpen, resumes.length, waitingForResume]);
 
   const canGenerate = (text.trim().length > 0 || !!file) && !loading;
 
@@ -139,6 +157,11 @@ export default function JobInputCard() {
                   <DropdownMenuItem onClick={() => imageInputRef.current?.click()} className="gap-2 p-3 cursor-pointer">
                     <ImageIcon className="h-4 w-4 text-muted-foreground" />
                     <span>Upload Image</span>
+                  </DropdownMenuItem>
+                  <div className="h-px bg-border my-1" />
+                  <DropdownMenuItem onClick={() => openResumeModal()} className="gap-2 p-3 cursor-pointer">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span>Manage Resumes</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

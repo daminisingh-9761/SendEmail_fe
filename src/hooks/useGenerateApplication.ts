@@ -26,7 +26,8 @@ export function useGenerateApplication() {
         openLogin("generate");
         return;
       }
-      if (resumes.length === 0 || !selectedResumeId) {
+
+      if (resumes.length === 0) {
         openResumeModal("generate");
         return;
       }
@@ -36,7 +37,7 @@ export function useGenerateApplication() {
         const job = await jobApi.extract(input);
         setExtractedJob(job);
 
-        const email = await jobApi.generateEmail({ jobId: job.id, resumeId: selectedResumeId });
+        const email = await jobApi.generateEmail({ jobId: job.id });
         setGeneratedEmail(email);
         setRecipientEmail(job.hrEmail ?? "");
 
