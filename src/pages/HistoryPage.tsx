@@ -48,7 +48,7 @@ export default function HistoryPage() {
         {applications?.map((app) => (
           <Link key={app.id} to={`/applications/${app.id}`}>
             <Card className="transition-colors hover:bg-secondary/40">
-              <CardContent className="flex items-center justify-between gap-4 p-5">
+              <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{app.job.jobTitle}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -57,7 +57,7 @@ export default function HistoryPage() {
                     <span>{formatDate(app.createdAt)}</span>
                   </div>
                 </div>
-                <Badge variant={statusVariant[app.status]}>{statusLabel[app.status]}</Badge>
+                <Badge variant={statusVariant[app.status]} className="self-start sm:self-auto">{statusLabel[app.status]}</Badge>
               </CardContent>
             </Card>
           </Link>

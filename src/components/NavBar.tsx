@@ -40,15 +40,16 @@ export default function NavBar() {
           <span className="font-display text-lg font-semibold tracking-tight">Mailjob</span>
         </Link>
 
-        <nav className="flex items-center gap-1">
+        <nav className="flex items-center gap-1 sm:gap-2">
           <a href="/" onClick={handleNewApplication}>
-            <Button variant={pathname === "/" ? "secondary" : "ghost"} size="sm">
-              New application
+            <Button variant={pathname === "/" ? "secondary" : "ghost"} size="sm" className="px-2 sm:px-3">
+              <span className="hidden sm:inline">New application</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </a>
           <Link to="/history">
-            <Button variant={pathname === "/history" ? "secondary" : "ghost"} size="sm" className="gap-1.5">
-              <History className="h-3.5 w-3.5" /> History
+            <Button variant={pathname === "/history" ? "secondary" : "ghost"} size="sm" className="gap-1.5 px-2 sm:px-3">
+              <History className="h-3.5 w-3.5" /> <span className="hidden sm:inline">History</span>
             </Button>
           </Link>
 
@@ -59,7 +60,7 @@ export default function NavBar() {
                   <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-300 text-sm font-semibold text-slate-700">
                     {user.name?.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-sm font-medium">{user.name.split(" ")[0]}</span>
+                  <span className="text-sm font-medium hidden sm:inline">{user.name.split(" ")[0]}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

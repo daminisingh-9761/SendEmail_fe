@@ -84,14 +84,14 @@ export default function ApplicationDetailPage() {
         </Card>
       )}
 
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         <Button variant="outline" className="gap-2" onClick={() => resend.mutate()} disabled={resend.isPending}>
           <RefreshCcw className="h-4 w-4" /> Resend
         </Button>
         <Button variant="accent" className="gap-2" onClick={() => followUp.mutate()} disabled={followUp.isPending}>
           <Send className="h-4 w-4" /> Generate follow-up
         </Button>
-        <Badge variant="success" className="ml-auto self-center">{app.status}</Badge>
+        <Badge variant="success" className="sm:ml-auto self-start sm:self-center">{app.status}</Badge>
       </div>
     </div>
   );

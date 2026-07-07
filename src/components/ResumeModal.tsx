@@ -1,7 +1,8 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useUiStore } from "@/store/uiStore";
 import { useResumeStore } from "@/store/resumeStore";
 import { resumeApi } from "@/lib/api";
@@ -13,6 +14,18 @@ export default function ResumeModal() {
   const { resumeModalOpen, closeResumeModal, pendingAction, clearPending } = useUiStore();
   const { resumes, selectedResumeId, selectResume, addResume } = useResumeStore();
   const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (resumeModalOpen && !selectedResumeId && resumes.length > 0) {
+      const defaultResume = resumes.find((r) => r.isDefault);
+      if (defaultResume) {
+        selectResume(defaultResume.id);
+      } else {
+        const latest = [...resumes].sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())[0];
+        if (latest) selectResume(latest.id);
+      }
+    }
+  }, [resumeModalOpen, selectedResumeId, resumes, selectResume]);
 
   const onDrop = useCallback(async (accepted: File[]) => {
     const file = accepted[0];
@@ -67,8 +80,15 @@ export default function ResumeModal() {
               >
                 <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{r.fileName}</p>
-                  <p className="text-xs text-muted-foreground">Uploaded {formatDate(r.uploadedAt)}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium">{r.fileName}</p>
+                    {r.isDefault && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">
+                        Default
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">Uploaded {formatDate(r.uploadedAt)}</p>
                 </div>
                 {selectedResumeId === r.id && <CheckCircle2 className="h-4 w-4 shrink-0 text-accent" />}
               </button>
