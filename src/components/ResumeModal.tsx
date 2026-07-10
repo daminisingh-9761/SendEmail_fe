@@ -7,25 +7,38 @@ import { useUiStore } from "@/store/uiStore";
 import { useResumeStore } from "@/store/resumeStore";
 import { resumeApi } from "@/lib/api";
 import { toast } from "@/components/ui/toaster";
-import { FileText, UploadCloud, CheckCircle2 } from "lucide-react";
+import { FileText, UploadCloud, CheckCircle2, Loader2 } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 
 export default function ResumeModal() {
   const { resumeModalOpen, closeResumeModal, pendingAction, clearPending } = useUiStore();
-  const { resumes, selectedResumeId, selectResume, addResume } = useResumeStore();
+  const { resumes, selectedResumeId, selectResume, setResumes } = useResumeStore();
   const [uploading, setUploading] = useState(false);
+  const [fetching, setFetching] = useState(false);
 
+  // Fetch resumes from backend whenever the modal opens
   useEffect(() => {
-    if (resumeModalOpen && !selectedResumeId && resumes.length > 0) {
-      const defaultResume = resumes.find((r) => r.isDefault);
-      if (defaultResume) {
-        selectResume(defaultResume.id);
-      } else {
-        const latest = [...resumes].sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())[0];
-        if (latest) selectResume(latest.id);
-      }
+    if (resumeModalOpen) {
+      setFetching(true);
+      resumeApi.list()
+        .then((data) => {
+          setResumes(data);
+          
+          // Auto-selection logic (if none selected)
+          if (!selectedResumeId && data.length > 0) {
+            const defaultResume = data.find((r: any) => r.isDefault);
+            if (defaultResume) {
+              selectResume(defaultResume.id);
+            } else {
+              const latest = [...data].sort((a: any, b: any) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())[0];
+              if (latest) selectResume(latest.id);
+            }
+          }
+        })
+        .catch(() => toast({ title: "Error", description: "Failed to load resumes", variant: "error" }))
+        .finally(() => setFetching(false));
     }
-  }, [resumeModalOpen, selectedResumeId, resumes, selectResume]);
+  }, [resumeModalOpen]); // Intentionally omitting selectedResumeId to avoid re-fetching when selection changes
 
   const onDrop = useCallback(async (accepted: File[]) => {
     const file = accepted[0];
@@ -34,8 +47,12 @@ export default function ResumeModal() {
     try {
       const resume = await resumeApi.upload(file);
       await resumeApi.setDefault(resume.id);
-      resume.isDefault = true;
-      addResume(resume);
+      
+      // Refetch latest resumes from backend instead of manually appending
+      const updatedResumes = await resumeApi.list();
+      setResumes(updatedResumes);
+      selectResume(resume.id); // select the newly uploaded resume
+      
       toast({ title: "Resume uploaded", description: file.name, variant: "success" });
 
       if (pendingAction === "generate") {
@@ -47,7 +64,7 @@ export default function ResumeModal() {
     } finally {
       setUploading(false);
     }
-  }, [addResume, pendingAction, closeResumeModal, clearPending]);
+  }, [setResumes, selectResume, pendingAction, closeResumeModal, clearPending]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -65,7 +82,7 @@ export default function ResumeModal() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="font-display text-xl">
-            {resumes.length === 0 ? "Upload your resume" : "Choose a resume"}
+            {fetching ? "Loading resumes..." : resumes.length === 0 ? "Upload your resume" : "Choose a resume"}
           </DialogTitle>
           <DialogDescription>
             {resumes.length === 0
@@ -74,7 +91,11 @@ export default function ResumeModal() {
           </DialogDescription>
         </DialogHeader>
 
-        {resumes.length > 0 && (
+        {fetching && resumes.length === 0 ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : resumes.length > 0 ? (
           <div className="mb-4 flex flex-col gap-2 max-h-40 overflow-y-auto">
             {resumes.map((r) => (
               <button
@@ -101,7 +122,7 @@ export default function ResumeModal() {
               </button>
             ))}
           </div>
-        )}
+        ) : null}
 
         <div
           {...getRootProps()}
@@ -121,7 +142,7 @@ export default function ResumeModal() {
         <Button
           className="mt-5 w-full"
           variant="accent"
-          disabled={!selectedResumeId || uploading}
+          disabled={!selectedResumeId || uploading || fetching}
           onClick={handleContinue}
         >
           Continue
