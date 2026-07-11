@@ -23,6 +23,7 @@ export type ApplicationStatus =
   | "failed";
 
 export type ExtractedJob = {
+  id: string;
   jobTitle: string;
   company: string;
   location?: string;
