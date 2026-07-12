@@ -7,8 +7,6 @@ import { Toaster } from "@/components/ui/toaster";
 import LoginModal from "@/components/LoginModal";
 import ResumeModal from "@/components/ResumeModal";
 import InstallBanner from "@/components/InstallBanner";
-
-
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
