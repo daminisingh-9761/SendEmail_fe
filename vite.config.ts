@@ -12,8 +12,8 @@ export default defineConfig({
         name: "Mailjob",
         short_name: "Mailjob",
         description: "Apply faster with AI",
-        theme_color: "#2563eb",
-        background_color: "#ffffff",
+        theme_color: "#F9F5F0",
+        background_color: "#F9F5F0",
 
         display: "standalone",
 
@@ -29,6 +29,12 @@ export default defineConfig({
             sizes: "192x192",
             type: "image/png",
             purpose: "any",
+          },
+          {
+            src: "pwa-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "maskable",
           },
           {
             src: "pwa-512x512.png",

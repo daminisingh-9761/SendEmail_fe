@@ -7,8 +7,7 @@ import { jobApi } from "@/lib/api";
 import { toast } from "@/components/ui/toaster";
 import type { JobInputType } from "@/types";
 
-// Orchestrates the full "Generate Application" flow described in the spec:
-// 1) require login  2) require a resume  3) call AI to extract job + write email.
+
 export function useGenerateApplication() {
   const [loading, setLoading] = useState(false);
   const { user } = useAuthStore();

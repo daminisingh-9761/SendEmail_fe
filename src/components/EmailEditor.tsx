@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,15 +9,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { SkeletonEmailDraft } from "@/components/ui/skeleton";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useDraftStore } from "@/store/applicationStore";
 import { useResumeStore } from "@/store/resumeStore";
 import { useAuthStore } from "@/store/authStore";
 import { applicationApi, authApi } from "@/lib/api";
 import { toast } from "@/components/ui/toaster";
-import { Send, Paperclip, MapPin, Building2, AlertCircle, Loader2, Mail } from "lucide-react";
+import { Send, Paperclip, MapPin, Building2, AlertCircle, Loader2, Mail, Sparkles, RefreshCcw } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { useUiStore } from "@/store/uiStore";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const schema = z.object({
   recipientEmail: z.string().email("Enter a valid email address"),
@@ -38,6 +41,12 @@ export default function EmailEditor() {
   const [regenerating, setRegenerating] = useState(false);
   const [instruction, setInstruction] = useState("");
   const [editing, setEditing] = useState(false);
+  const [aiSheetOpen, setAiSheetOpen] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+
   const connectGmail = useGoogleLogin({
     flow: "auth-code",
     scope: [
@@ -77,29 +86,50 @@ export default function EmailEditor() {
     },
   });
 
+  const { ref: bodyFormRef, ...bodyRegisterRest } = register("body");
+  const autoGrowBody = () => {
+    if (bodyRef.current) {
+      bodyRef.current.style.height = "auto";
+      bodyRef.current.style.height = `${bodyRef.current.scrollHeight}px`;
+    }
+  };
+  useEffect(() => {
+    autoGrowBody();
+  }, [generatedEmail?.body]);
+
   if (!extractedJob) return null;
   
   if (!generatedEmail) {
     return (
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="flex flex-col items-center justify-center py-24 text-center">
-        <Loader2 className="h-10 w-10 animate-spin text-accent mb-4" />
-        <h3 className="text-xl font-medium tracking-tight">Drafting your email...</h3>
-        <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-          Our AI is reading the job requirements and highlighting your best experience from your resume.
-        </p>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/15">
+                <Loader2 className="h-5 w-5 animate-spin text-accent" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-semibold">Drafting your email…</CardTitle>
+                <CardDescription className="text-xs">Reading the job requirements and writing a tailored email.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <SkeletonEmailDraft />
+          </CardContent>
+        </Card>
       </motion.div>
     );
   }
 
   async function onSubmit(values: FormValues) {
+    if (navigator.vibrate) navigator.vibrate(10);
     setSending(true);
     try {
-      // Application was already created server-side during generation;
-      // here we just confirm the final, possibly edited, content and send it.
       await applicationApi.send(extractedJob!.id, values);
       setSent(true);
       toast({ title: "Email sent", description: `Your application went to ${values.recipientEmail}`, variant: "success" });
-      
+      localStorage.setItem("mailjob_onboarded", "true");
       reset();
       clearSelectedResume();
       incrementSessionKey();
@@ -119,7 +149,7 @@ export default function EmailEditor() {
       setGeneratedEmail({ subject: updatedApp.email.subject, body: updatedApp.email.body });
       setValue("subject", updatedApp.email.subject);
       setValue("body", updatedApp.email.body);
-      toast({ title: "Email regenerated", description: "A new version of the email is ready.", variant: "success" });
+      toast({ title: "Email regenerated", variant: "success" });
     } catch {
       toast({ title: "Couldn't regenerate", description: "Please try again.", variant: "error" });
     } finally {
@@ -129,6 +159,7 @@ export default function EmailEditor() {
 
   async function handleEdit() {
     if (!extractedJob || !instruction.trim()) return;
+    if (navigator.vibrate) navigator.vibrate(10);
     setEditing(true);
     try {
       const updatedApp = await applicationApi.edit(extractedJob.id, { instruction });
@@ -136,6 +167,7 @@ export default function EmailEditor() {
       setValue("subject", updatedApp.email.subject);
       setValue("body", updatedApp.email.body);
       setInstruction("");
+      setAiSheetOpen(false);
       toast({ title: "Email updated", description: "AI applied your changes.", variant: "success" });
     } catch {
       toast({ title: "Couldn't apply changes", description: "Please try again.", variant: "error" });
@@ -144,125 +176,228 @@ export default function EmailEditor() {
     }
   }
 
-  return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div>
-              <CardTitle>{extractedJob.jobTitle}</CardTitle>
-              <CardDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="inline-flex items-center gap-1"><Building2 className="h-3.5 w-3.5" /> {extractedJob.company}</span>
-                {extractedJob.location && (
-                  <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {extractedJob.location}</span>
-                )}
-              </CardDescription>
-            </div>
-            <Badge variant="accent">AI extracted</Badge>
+  function triggerSubmit() {
+    formRef.current?.requestSubmit();
+  }
+
+
+
+  const jobSummary = (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <CardTitle className="text-base">{extractedJob.jobTitle}</CardTitle>
+            <CardDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="inline-flex items-center gap-1"><Building2 className="h-3.5 w-3.5" /> {extractedJob.company}</span>
+              {extractedJob.location && (
+                <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {extractedJob.location}</span>
+              )}
+            </CardDescription>
           </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">{extractedJob.summary}</p>
-          {extractedJob.keyRequirements.length > 0 && (
-            <ul className="mt-3 flex flex-wrap gap-1.5">
-              {extractedJob.keyRequirements.map((req) => (
-                <li key={req}>
-                  <Badge variant="secondary">{req}</Badge>
-                </li>
-              ))}
-            </ul>
+          <Badge variant="accent" className="shrink-0">AI extracted</Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">{extractedJob.summary}</p>
+        {extractedJob.keyRequirements.length > 0 && (
+          <ul className="mt-3 flex flex-wrap gap-1.5">
+            {extractedJob.keyRequirements.map((req) => (
+              <li key={req}><Badge variant="secondary">{req}</Badge></li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const emailForm = (
+    <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {/* To */}
+      <div className="space-y-1.5">
+        <Label htmlFor="recipientEmail" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">To</Label>
+        <Input id="recipientEmail" {...register("recipientEmail")} placeholder="hr@company.com" />
+        {!extractedJob.hrEmail && (
+          <p className="flex items-center gap-1.5 text-xs text-accent">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" /> We couldn't find a recipient — please confirm above.
+          </p>
+        )}
+        {errors.recipientEmail && <p className="text-xs text-destructive">{errors.recipientEmail.message}</p>}
+      </div>
+
+      {/* Subject */}
+      <div className="space-y-1.5">
+        <Label htmlFor="subject" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subject</Label>
+        <Input id="subject" {...register("subject")} />
+        {errors.subject && <p className="text-xs text-destructive">{errors.subject.message}</p>}
+      </div>
+
+      {/* Message */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="body" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Message</Label>
+          {!isDesktop && (
+            <button
+              type="button"
+              onClick={() => setAiSheetOpen(true)}
+              className="flex items-center gap-1.5 text-xs font-medium text-accent active:opacity-70 press-scale py-1 px-2 -mr-2 rounded-full"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              AI Edit
+            </button>
           )}
-        </CardContent>
-      </Card>
+        </div>
+        <Textarea
+          id="body"
+          {...bodyRegisterRest}
+          ref={(e) => {
+            bodyFormRef(e);
+            bodyRef.current = e;
+          }}
+          className="min-h-[160px]"
+          onInput={(e) => {
+            const target = e.target as HTMLTextAreaElement;
+            target.style.height = "auto";
+            target.style.height = `${target.scrollHeight}px`;
+          }}
+        />
+        {errors.body && <p className="text-xs text-destructive">{errors.body.message}</p>}
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Review your email</CardTitle>
-          <CardDescription>Edit anything before it goes out — nothing sends without your confirmation.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <Label htmlFor="recipientEmail">To</Label>
-              <Input id="recipientEmail" {...register("recipientEmail")} placeholder="hr@company.com" />
-              {!extractedJob.hrEmail && (
-                <p className="mt-1.5 flex items-center gap-1.5 text-xs text-accent">
-                  <AlertCircle className="h-3.5 w-3.5" /> We couldn't find a recipient automatically — please confirm it above.
-                </p>
-              )}
-              {errors.recipientEmail && <p className="mt-1 text-xs text-destructive">{errors.recipientEmail.message}</p>}
-            </div>
+      {/* Resume attachment */}
+      <div className="flex items-center justify-between rounded-xl border border-border bg-secondary/30 px-3 py-2.5">
+        <span className="flex items-center gap-2 text-sm">
+          <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="truncate">{resume?.fileName ?? "No resume selected"}</span>
+        </span>
+        <Badge variant="outline" className="shrink-0 text-[10px]">Attached</Badge>
+      </div>
 
-            <div>
-              <Label htmlFor="subject">Subject</Label>
-              <Input id="subject" {...register("subject")} />
-              {errors.subject && <p className="mt-1 text-xs text-destructive">{errors.subject.message}</p>}
-            </div>
+      {/* Inline AI Edit for Desktop */}
+      {isDesktop && (
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3 mt-4">
+          <Label htmlFor="instruction" className="text-sm font-semibold flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/10 text-accent">✨</span>
+            AI Instructions
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="instruction"
+              placeholder='e.g., "make it more professional", "shorten it"'
+              value={instruction}
+              onChange={(e) => setInstruction(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleEdit();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={editing || !instruction.trim()}
+              onClick={handleEdit}
+              className="shrink-0"
+            >
+              {editing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              {editing ? "Applying…" : "Apply AI Changes"}
+            </Button>
+          </div>
+        </div>
+      )}
 
-            <div>
-              <Label htmlFor="body">Message</Label>
-              <Textarea id="body" rows={12} {...register("body")} />
-              {errors.body && <p className="mt-1 text-xs text-destructive">{errors.body.message}</p>}
-            </div>
+      {/* Inline Action Bar for Desktop */}
+      {isDesktop && (
+        <div className="flex gap-3 pt-4 border-t border-border mt-6">
+          {!user?.hasGmailAccess ? (
+            <Button type="button" variant="accent" size="lg" className="flex-1 gap-2" disabled={connectingGmail} onClick={() => connectGmail()}>
+              {connectingGmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+              {connectingGmail ? "Connecting…" : "Connect Gmail to Send"}
+            </Button>
+          ) : (
+            <Button type="submit" variant="accent" size="lg" className="flex-1 gap-2" disabled={sending || sent}>
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {sent ? "Sent ✓" : sending ? "Sending…" : "Send email"}
+            </Button>
+          )}
+          <Button type="button" variant="outline" size="lg" disabled={regenerating || sending || sent} onClick={handleRegenerate} className="px-6">
+            {regenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCcw className="h-4 w-4 mr-2" />}
+            {regenerating ? "Regenerating…" : "Regenerate"}
+          </Button>
+        </div>
+      )}
+    </form>
+  );
 
-            <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-              <Label htmlFor="instruction" className="text-sm font-semibold flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/10 text-accent">✨</span>
-                AI Instructions
-              </Label>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Input
-                  id="instruction"
-                  placeholder='e.g., "make it more professional", "shorten it"'
-                  value={instruction}
-                  onChange={(e) => setInstruction(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleEdit();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={editing || !instruction.trim()}
-                  onClick={handleEdit}
-                >
-                  {editing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                  {editing ? "Applying…" : "Apply AI Changes"}
-                </Button>
-              </div>
-            </div>
+  if (isDesktop) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-6">
+        {jobSummary}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Review your email</CardTitle>
+            <CardDescription>Edit anything before it goes out — nothing sends without your confirmation.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {emailForm}
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
 
-            <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 px-3 py-2.5">
-              <span className="flex items-center gap-2 text-sm">
-                <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-                {resume?.fileName ?? "No resume selected"}
-              </span>
-              <Badge variant="outline">Attached</Badge>
-            </div>
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="flex-1 overflow-y-auto scroll-momentum px-1 pt-6 pb-[80px]"
+      >
+        {jobSummary}
+        {emailForm}
+      </motion.div>
 
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              {!user?.hasGmailAccess ? (
-                <Button type="button" variant="accent" size="lg" className="flex-1 gap-2" disabled={connectingGmail} onClick={() => connectGmail()}>
-                  {connectingGmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-                  {connectingGmail ? "Connecting…" : "Connect Gmail to Send"}
-                </Button>
-              ) : (
-                <Button type="submit" variant="accent" size="lg" className="flex-1 gap-2" disabled={sending || sent}>
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  {sent ? "Sent" : sending ? "Sending…" : "Send email"}
-                </Button>
-              )}
-              <Button type="button" variant="outline" size="lg" disabled={regenerating || sending || sent} onClick={handleRegenerate}>
-                {regenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-                {regenerating ? "Regenerating…" : "Regenerate"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </motion.div>
+      <div className="fixed left-0 right-0 z-30 border-t border-border bg-card/95 px-5 py-3 shadow-lg backdrop-blur-xl bottom-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom))]">
+        <div className="flex gap-3 max-w-2xl mx-auto">
+          {!user?.hasGmailAccess ? (
+            <Button type="button" variant="accent" size="lg" className="flex-1 gap-2 press-scale" disabled={connectingGmail} onClick={() => connectGmail()}>
+              {connectingGmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+              {connectingGmail ? "Connecting…" : "Connect Gmail"}
+            </Button>
+          ) : (
+            <Button type="button" variant="accent" size="lg" className="flex-1 gap-2 press-scale" disabled={sending || sent} onClick={triggerSubmit}>
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {sent ? "Sent ✓" : sending ? "Sending…" : "Send email"}
+            </Button>
+          )}
+          <Button type="button" variant="outline" size="lg" disabled={regenerating || sending || sent} onClick={handleRegenerate} className="press-scale px-4">
+            {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+          </Button>
+        </div>
+      </div>
+
+      <BottomSheet open={aiSheetOpen} onOpenChange={setAiSheetOpen} title="AI Instructions" description="Tell the AI how to revise the email — e.g. make it shorter, more professional, mention a specific skill.">
+        <div className="space-y-3">
+          <Input
+            placeholder='e.g., "make it more professional"'
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleEdit();
+              }
+            }}
+            autoFocus
+          />
+          <Button variant="accent" className="w-full press-scale gap-2" disabled={editing || !instruction.trim()} onClick={handleEdit}>
+            {editing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {editing ? "Applying…" : "Apply Changes"}
+          </Button>
+        </div>
+      </BottomSheet>
+    </>
   );
 }

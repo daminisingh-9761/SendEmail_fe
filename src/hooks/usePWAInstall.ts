@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-// Extend the Window interface for the custom event
+
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
@@ -21,9 +21,7 @@ export function usePWAInstall() {
 
   useEffect(() => {
     const handler = (e: BeforeInstallPromptEvent) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setDeferredPrompt(e);
     };
 
@@ -37,13 +35,10 @@ export function usePWAInstall() {
   const install = async () => {
     if (!deferredPrompt) return;
     
-    // Show the install prompt
     deferredPrompt.prompt();
     
-    // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
     
-    // We've used the prompt, and can't use it again, throw it away
     if (outcome === 'accepted') {
       setDeferredPrompt(null);
     }

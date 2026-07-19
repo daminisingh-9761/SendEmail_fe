@@ -1,21 +1,6 @@
 import { create } from "zustand";
 
-// Drives the global modals so any component (and any async flow) can
-// trigger "please log in" / "please pick a resume" without prop drilling.
-type PendingAction = "generate" | null;
-
-type UiState = {
-  loginModalOpen: boolean;
-  resumeModalOpen: boolean;
-  pendingAction: PendingAction;
-  sessionKey: number;
-  openLogin: (pending?: PendingAction) => void;
-  closeLogin: () => void;
-  openResumeModal: (pending?: PendingAction) => void;
-  closeResumeModal: () => void;
-  clearPending: () => void;
-  incrementSessionKey: () => void;
-};
+import type { UiState } from "@/types";
 
 export const useUiStore = create<UiState>((set) => ({
   loginModalOpen: false,
