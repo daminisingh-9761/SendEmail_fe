@@ -26,7 +26,7 @@ export function Toaster() {
   const { toasts, dismiss } = useToastStore();
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex w-full max-w-sm flex-col gap-2">
+    <div className="fixed top-[calc(env(safe-area-inset-top)+8px)] left-4 right-4 z-[100] flex w-auto max-w-sm mx-auto flex-col gap-2 pointer-events-none">
       {toasts.map((t) => {
         const Icon = icons[t.variant ?? "info"];
         return <ToastItem key={t.id} toast={t} Icon={Icon} onDismiss={() => dismiss(t.id)} />;
@@ -44,7 +44,8 @@ function ToastItem({ toast, Icon, onDismiss }: { toast: Toast; Icon: typeof Info
   return (
     <div
       className={cn(
-        "flex items-start gap-3 rounded-lg border border-border bg-card p-4 shadow-lg animate-in slide-in-from-bottom-4",
+        "flex items-start gap-3 rounded-xl border border-border bg-card p-4 shadow-lg pointer-events-auto",
+        "animate-in slide-in-from-top-4 fade-in duration-200",
         toast.variant === "success" && "border-emerald-200",
         toast.variant === "error" && "border-destructive/30"
       )}
@@ -61,7 +62,7 @@ function ToastItem({ toast, Icon, onDismiss }: { toast: Toast; Icon: typeof Info
         <p className="text-sm font-medium">{toast.title}</p>
         {toast.description && <p className="text-xs text-muted-foreground mt-0.5">{toast.description}</p>}
       </div>
-      <button onClick={onDismiss} className="text-muted-foreground hover:text-foreground">
+      <button onClick={onDismiss} className="text-muted-foreground active:text-foreground press-scale">
         <X className="h-3.5 w-3.5" />
       </button>
     </div>

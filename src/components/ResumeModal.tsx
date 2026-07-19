@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useUiStore } from "@/store/uiStore";
@@ -16,7 +16,7 @@ export default function ResumeModal() {
   const [uploading, setUploading] = useState(false);
   const [fetching, setFetching] = useState(false);
 
-  // Fetch resumes from backend whenever the modal opens
+
   useEffect(() => {
     if (resumeModalOpen) {
       setFetching(true);
@@ -24,7 +24,7 @@ export default function ResumeModal() {
         .then((data) => {
           setResumes(data);
           
-          // Auto-selection logic (if none selected)
+
           if (!selectedResumeId && data.length > 0) {
             const defaultResume = data.find((r: any) => r.isDefault);
             if (defaultResume) {
@@ -38,7 +38,7 @@ export default function ResumeModal() {
         .catch(() => toast({ title: "Error", description: "Failed to load resumes", variant: "error" }))
         .finally(() => setFetching(false));
     }
-  }, [resumeModalOpen]); // Intentionally omitting selectedResumeId to avoid re-fetching when selection changes
+  }, [resumeModalOpen]);
 
   const onDrop = useCallback(async (accepted: File[]) => {
     const file = accepted[0];
@@ -48,10 +48,10 @@ export default function ResumeModal() {
       const resume = await resumeApi.upload(file);
       await resumeApi.setDefault(resume.id);
       
-      // Refetch latest resumes from backend instead of manually appending
+
       const updatedResumes = await resumeApi.list();
       setResumes(updatedResumes);
-      selectResume(resume.id); // select the newly uploaded resume
+      selectResume(resume.id);
       
       toast({ title: "Resume uploaded", description: file.name, variant: "success" });
 
@@ -73,81 +73,87 @@ export default function ResumeModal() {
   });
 
   function handleContinue() {
+    if (navigator.vibrate) navigator.vibrate(10);
     closeResumeModal();
     clearPending();
   }
 
+  const sheetTitle = fetching
+    ? "Loading resumes..."
+    : resumes.length === 0
+    ? "Upload your resume"
+    : "Choose a resume";
+
+  const sheetDescription = resumes.length === 0
+    ? "We'll attach this to every application you send. You can replace it any time."
+    : "Use your saved resume, or upload a new version for this application.";
+
   return (
-    <Dialog open={resumeModalOpen} onOpenChange={(o) => !o && closeResumeModal()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="font-display text-xl">
-            {fetching ? "Loading resumes..." : resumes.length === 0 ? "Upload your resume" : "Choose a resume"}
-          </DialogTitle>
-          <DialogDescription>
-            {resumes.length === 0
-              ? "We'll attach this to every application you send. You can replace it any time."
-              : "Use your saved resume, or upload a new version for this application."}
-          </DialogDescription>
-        </DialogHeader>
-
-        {fetching && resumes.length === 0 ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : resumes.length > 0 ? (
-          <div className="mb-4 flex flex-col gap-2 max-h-40 overflow-y-auto">
-            {resumes.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => selectResume(r.id)}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
-                  selectedResumeId === r.id ? "border-accent bg-accent/5" : "border-border hover:bg-secondary"
-                )}
-              >
-                <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-medium">{r.fileName}</p>
-                    {r.isDefault && (
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">
-                        Default
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">Uploaded {formatDate(r.uploadedAt)}</p>
-                </div>
-                {selectedResumeId === r.id && <CheckCircle2 className="h-4 w-4 shrink-0 text-accent" />}
-              </button>
-            ))}
-          </div>
-        ) : null}
-
-        <div
-          {...getRootProps()}
-          className={cn(
-            "flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors",
-            isDragActive ? "border-accent bg-accent/5" : "border-border hover:bg-secondary/50"
-          )}
-        >
-          <input {...getInputProps()} />
-          <UploadCloud className="h-5 w-5 text-muted-foreground" />
-          <p className="text-sm font-medium">
-            {uploading ? "Uploading…" : "Drop a PDF/DOCX, or click to browse"}
-          </p>
-          <p className="text-xs text-muted-foreground">Max 10MB</p>
+    <ResponsiveModal
+      open={resumeModalOpen}
+      onOpenChange={(o) => !o && closeResumeModal()}
+      title={sheetTitle}
+      description={sheetDescription}
+      desktopClassName="max-w-[500px]"
+    >
+      {fetching && resumes.length === 0 ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
+      ) : resumes.length > 0 ? (
+        <div className="mb-4 flex flex-col gap-2 max-h-52 overflow-y-auto scroll-momentum">
+          {resumes.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => selectResume(r.id)}
+              className={cn(
+                "flex items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors min-h-[48px]",
+                "active:bg-secondary/80 active:scale-[0.99]",
+                selectedResumeId === r.id ? "border-accent bg-accent/5" : "border-border"
+              )}
+            >
+              <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-sm font-medium">{r.fileName}</p>
+                  {r.isDefault && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">
+                      Default
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">Uploaded {formatDate(r.uploadedAt)}</p>
+              </div>
+              {selectedResumeId === r.id && <CheckCircle2 className="h-4 w-4 shrink-0 text-accent" />}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
-        <Button
-          className="mt-5 w-full"
-          variant="accent"
-          disabled={!selectedResumeId || uploading || fetching}
-          onClick={handleContinue}
-        >
-          Continue
-        </Button>
-      </DialogContent>
-    </Dialog>
+      <div
+        {...getRootProps()}
+        className={cn(
+          "flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors",
+          "active:bg-secondary/60",
+          isDragActive ? "border-accent bg-accent/5" : "border-border"
+        )}
+      >
+        <input {...getInputProps()} />
+        <UploadCloud className="h-5 w-5 text-muted-foreground" />
+        <p className="text-sm font-medium">
+          {uploading ? "Uploading…" : "Drop a PDF/DOCX, or click to browse"}
+        </p>
+        <p className="text-xs text-muted-foreground">Max 10MB</p>
+      </div>
+
+      <Button
+        className="mt-5 w-full press-scale"
+        variant="accent"
+        disabled={!selectedResumeId || uploading || fetching}
+        onClick={handleContinue}
+      >
+        Continue
+      </Button>
+    </ResponsiveModal>
   );
 }

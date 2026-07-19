@@ -53,3 +53,68 @@ export type Application = {
   followUps: { id: string; sentAt: string; body: string }[];
   aiSuggestions: string[];
 };
+
+export interface HomeLayoutProps {
+  isReturningUser: boolean;
+  applications?: Application[];
+  appsLoading: boolean;
+  sentThisWeek: number;
+  recentApps: Application[];
+}
+
+export interface ProfileSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title?: string;
+}
+
+export interface RecentApplicationCardProps {
+  app: Application;
+}
+
+
+export type ResumeState = {
+  resumes: Resume[];
+  selectedResumeId: string | null;
+  setResumes: (resumes: Resume[]) => void;
+  selectResume: (id: string) => void;
+  clearSelectedResume: () => void;
+};
+
+export type DraftState = {
+  extractedJob: ExtractedJob | null;
+  generatedEmail: GeneratedEmail | null;
+  recipientEmail: string;
+  setExtractedJob: (j: ExtractedJob | null) => void;
+  setGeneratedEmail: (e: GeneratedEmail | null) => void;
+  setRecipientEmail: (e: string) => void;
+  reset: () => void;
+};
+
+export type ApplicationsState = {
+  applications: Application[];
+  setApplications: (a: Application[]) => void;
+  upsertApplication: (a: Application) => void;
+};
+
+export type AuthState = {
+  user: AuthUser | null;
+  token: string | null;
+  setSession: (user: AuthUser, token: string) => void;
+  logout: () => void;
+};
+
+export type PendingAction = "generate" | null;
+
+export type UiState = {
+  loginModalOpen: boolean;
+  resumeModalOpen: boolean;
+  pendingAction: PendingAction;
+  sessionKey: number;
+  openLogin: (pending?: PendingAction) => void;
+  closeLogin: () => void;
+  openResumeModal: (pending?: PendingAction) => void;
+  closeResumeModal: () => void;
+  clearPending: () => void;
+  incrementSessionKey: () => void;
+};

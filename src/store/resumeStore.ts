@@ -1,14 +1,5 @@
 import { create } from "zustand";
-import type { Resume } from "@/types";
-
-type ResumeState = {
-  resumes: Resume[];
-  selectedResumeId: string | null;
-  setResumes: (r: Resume[]) => void;
-  selectResume: (id: string) => void;
-  clearSelectedResume: () => void;
-};
-
+import type { ResumeState } from "@/types";
 export const useResumeStore = create<ResumeState>((set) => ({
   resumes: [],
   selectedResumeId: null,

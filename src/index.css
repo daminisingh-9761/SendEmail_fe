@@ -18,16 +18,123 @@
     --accent-foreground: 40 33% 97%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
+    --success: 152 60% 40%;
+    --success-foreground: 0 0% 100%;
     --border: 222 15% 88%;
     --ring: 17 78% 56%;
     --radius: 0.75rem;
+
+    /* Layout tokens */
+    --tab-bar-height: 56px;
   }
 }
 
 @layer base {
-  * { @apply border-border; }
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
+  * {
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
-  h1, h2, h3 { @apply font-display; }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", Roboto, "Helvetica Neue", Arial, sans-serif;
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Serif display font only for brand/marketing moments */
+  h1, h2, h3 {
+    @apply font-display;
+  }
+
+  /* Disable text selection on non-input UI chrome */
+  button, nav, [role="tablist"], [role="tab"], .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Allow text selection on inputs/textareas */
+  input, textarea, [contenteditable="true"] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+}
+
+@layer utilities {
+  /* Press-state utility for native-feel tappable elements */
+  .press-scale {
+    transition: transform 120ms ease-out, opacity 120ms ease-out;
+  }
+  .press-scale:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+  }
+
+  /* Safe area padding utilities */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-x {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Momentum scrolling for sheets/lists */
+  .scroll-momentum {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+  }
+}
+
+/* ---- Keyframes ---- */
+
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-slide-down {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(30%); opacity: 0; }
+  to   { transform: translateX(0);   opacity: 1; }
+}
+
+@keyframes slide-out-right {
+  from { transform: translateX(0);   opacity: 1; }
+  to   { transform: translateX(30%); opacity: 0; }
 }

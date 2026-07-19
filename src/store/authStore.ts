@@ -1,13 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AuthUser } from "@/types";
-
-type AuthState = {
-  user: AuthUser | null;
-  token: string | null;
-  setSession: (user: AuthUser, token: string) => void;
-  logout: () => void;
-};
+import type { AuthState } from "@/types";
 
 export const useAuthStore = create<AuthState>()(
   persist(

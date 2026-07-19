@@ -1,37 +1,53 @@
 import { motion, AnimatePresence } from "framer-motion";
-import JobInputCard from "@/components/JobInputCard";
+import { useQuery } from "@tanstack/react-query";
 import EmailEditor from "@/components/EmailEditor";
 import { useDraftStore } from "@/store/applicationStore";
+import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
+import { applicationApi } from "@/lib/api";
+import type { Application, HomeLayoutProps } from "@/types";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { cn } from "@/lib/utils";
+import MobileHomeLayout from "@/components/MobileHomeLayout";
+import DesktopHomeLayout from "@/components/DesktopHomeLayout";
 
 export default function HomePage() {
   const { extractedJob } = useDraftStore();
+  const { user } = useAuthStore();
   const { sessionKey } = useUiStore();
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+
+  const hasOnboarded = typeof window !== "undefined" && localStorage.getItem("mailjob_onboarded") === "true";
+  const isReturningUser = !!user && hasOnboarded;
+
+  const { data: applications, isLoading: appsLoading } = useQuery<Application[]>({
+    queryKey: ["applications"],
+    queryFn: applicationApi.list,
+    enabled: isReturningUser,
+  });
+
+  const recentApps = applications?.slice(0, 5) ?? [];
+  const sentThisWeek = applications?.filter((a) => {
+    if (!a.sentAt) return false;
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return new Date(a.sentAt).getTime() > oneWeekAgo;
+  }).length ?? 0;
+
+  const layoutProps: HomeLayoutProps = {
+    isReturningUser,
+    applications,
+    appsLoading,
+    sentThisWeek,
+    recentApps,
+  };
 
   return (
-    <div key={sessionKey} className="mx-auto max-w-2xl px-6 py-12 sm:py-16">
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mb-10 text-center"
-      >
-        <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
-          Turn any job post into a sent application.
-        </h1>
-        <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-          Drop in a description, a screenshot, or a link. We'll find who to email
-          and write the note — you just hit send.
-        </p>
-      </motion.div>
-
+    <div key={sessionKey} className="flex flex-col flex-1 w-full">
       <AnimatePresence mode="wait">
         {!extractedJob ? (
-          <motion.div key="input" exit={{ opacity: 0 }}>
-            <JobInputCard />
-          </motion.div>
+          isDesktop ? <DesktopHomeLayout {...layoutProps} /> : <MobileHomeLayout {...layoutProps} />
         ) : (
-          <motion.div key="editor">
+          <motion.div key="editor" className={cn(isDesktop ? "max-w-3xl mx-auto w-full pt-10 px-6 pb-20" : "px-5 py-6")}>
             <EmailEditor />
           </motion.div>
         )}

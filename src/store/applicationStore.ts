@@ -1,17 +1,5 @@
 import { create } from "zustand";
-import type { Application, ExtractedJob, GeneratedEmail } from "@/types";
-
-// Holds the in-progress draft (job extracted -> email generated -> sent)
-// before it's persisted as an Application via the backend.
-type DraftState = {
-  extractedJob: ExtractedJob | null;
-  generatedEmail: GeneratedEmail | null;
-  recipientEmail: string;
-  setExtractedJob: (j: ExtractedJob | null) => void;
-  setGeneratedEmail: (e: GeneratedEmail | null) => void;
-  setRecipientEmail: (e: string) => void;
-  reset: () => void;
-};
+import type { DraftState, ApplicationsState } from "@/types";
 
 export const useDraftStore = create<DraftState>((set) => ({
   extractedJob: null,
@@ -22,12 +10,6 @@ export const useDraftStore = create<DraftState>((set) => ({
   setRecipientEmail: (recipientEmail) => set({ recipientEmail }),
   reset: () => set({ extractedJob: null, generatedEmail: null, recipientEmail: "" }),
 }));
-
-type ApplicationsState = {
-  applications: Application[];
-  setApplications: (a: Application[]) => void;
-  upsertApplication: (a: Application) => void;
-};
 
 export const useApplicationsStore = create<ApplicationsState>((set) => ({
   applications: [],
