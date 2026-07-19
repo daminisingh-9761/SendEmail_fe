@@ -224,16 +224,27 @@ export default function EmailEditor() {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label htmlFor="body" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Message</Label>
-          {!isDesktop && (
+          <div className="flex items-center gap-1 -mr-2">
             <button
               type="button"
-              onClick={() => setAiSheetOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-medium text-accent active:opacity-70 press-scale py-1 px-2 -mr-2 rounded-full"
+              disabled={regenerating || sending || sent}
+              onClick={handleRegenerate}
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground active:opacity-70 press-scale py-1 px-2 rounded-full disabled:opacity-50"
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              AI Edit
+              {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
+              Regenerate
             </button>
-          )}
+            {!isDesktop && (
+              <button
+                type="button"
+                onClick={() => setAiSheetOpen(true)}
+                className="flex items-center gap-1.5 text-xs font-medium text-accent active:opacity-70 press-scale py-1 px-2 rounded-full"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                AI Edit
+              </button>
+            )}
+          </div>
         </div>
         <Textarea
           id="body"
@@ -297,22 +308,18 @@ export default function EmailEditor() {
 
       {/* Inline Action Bar for Desktop */}
       {isDesktop && (
-        <div className="flex gap-3 pt-4 border-t border-border mt-6">
+        <div className="flex pt-4 border-t border-border mt-6">
           {!user?.hasGmailAccess ? (
-            <Button type="button" variant="accent" size="lg" className="flex-1 gap-2" disabled={connectingGmail} onClick={() => connectGmail()}>
+            <Button type="button" variant="accent" size="lg" className="w-full gap-2" disabled={connectingGmail} onClick={() => connectGmail()}>
               {connectingGmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
               {connectingGmail ? "Connecting…" : "Connect Gmail to Send"}
             </Button>
           ) : (
-            <Button type="submit" variant="accent" size="lg" className="flex-1 gap-2" disabled={sending || sent}>
+            <Button type="submit" variant="accent" size="lg" className="w-full gap-2" disabled={sending || sent}>
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               {sent ? "Sent ✓" : sending ? "Sending…" : "Send email"}
             </Button>
           )}
-          <Button type="button" variant="outline" size="lg" disabled={regenerating || sending || sent} onClick={handleRegenerate} className="px-6">
-            {regenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCcw className="h-4 w-4 mr-2" />}
-            {regenerating ? "Regenerating…" : "Regenerate"}
-          </Button>
         </div>
       )}
     </form>
@@ -384,21 +391,18 @@ export default function EmailEditor() {
       </motion.div>
 
       <div className="fixed left-0 right-0 z-30 border-t border-border bg-card/95 px-5 py-3 shadow-lg backdrop-blur-xl bottom-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom))]">
-        <div className="flex gap-3 max-w-2xl mx-auto">
+        <div className="flex max-w-2xl mx-auto">
           {!user?.hasGmailAccess ? (
-            <Button type="button" variant="accent" size="lg" className="flex-1 gap-2 press-scale" disabled={connectingGmail} onClick={() => connectGmail()}>
+            <Button type="button" variant="accent" size="lg" className="w-full gap-2 press-scale" disabled={connectingGmail} onClick={() => connectGmail()}>
               {connectingGmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
               {connectingGmail ? "Connecting…" : "Connect Gmail"}
             </Button>
           ) : (
-            <Button type="button" variant="accent" size="lg" className="flex-1 gap-2 press-scale" disabled={sending || sent} onClick={triggerSubmit}>
+            <Button type="button" variant="accent" size="lg" className="w-full gap-2 press-scale" disabled={sending || sent} onClick={triggerSubmit}>
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               {sent ? "Sent ✓" : sending ? "Sending…" : "Send email"}
             </Button>
           )}
-          <Button type="button" variant="outline" size="lg" disabled={regenerating || sending || sent} onClick={handleRegenerate} className="press-scale px-4">
-            {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
-          </Button>
         </div>
       </div>
 
