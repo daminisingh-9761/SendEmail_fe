@@ -16,7 +16,7 @@ import { useResumeStore } from "@/store/resumeStore";
 import { useAuthStore } from "@/store/authStore";
 import { applicationApi, authApi } from "@/lib/api";
 import { toast } from "@/components/ui/toaster";
-import { Send, Paperclip, MapPin, Building2, AlertCircle, Loader2, Mail, Sparkles, RefreshCcw } from "lucide-react";
+import { Send, Paperclip, MapPin, Building2, AlertCircle, Loader2, Mail, Sparkles, RefreshCcw, ChevronRight, FileText } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { useUiStore } from "@/store/uiStore";
@@ -42,6 +42,7 @@ export default function EmailEditor() {
   const [instruction, setInstruction] = useState("");
   const [editing, setEditing] = useState(false);
   const [aiSheetOpen, setAiSheetOpen] = useState(false);
+  const [jdSheetOpen, setJdSheetOpen] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   
@@ -182,33 +183,20 @@ export default function EmailEditor() {
 
 
 
-  const jobSummary = (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle className="text-base">{extractedJob.jobTitle}</CardTitle>
-            <CardDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="inline-flex items-center gap-1"><Building2 className="h-3.5 w-3.5" /> {extractedJob.company}</span>
-              {extractedJob.location && (
-                <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {extractedJob.location}</span>
-              )}
-            </CardDescription>
-          </div>
-          <Badge variant="accent" className="shrink-0">AI extracted</Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground">{extractedJob.summary}</p>
-        {extractedJob.keyRequirements.length > 0 && (
-          <ul className="mt-3 flex flex-wrap gap-1.5">
-            {extractedJob.keyRequirements.map((req) => (
-              <li key={req}><Badge variant="secondary">{req}</Badge></li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+  const jobChip = (
+    <button
+      type="button"
+      onClick={() => setJdSheetOpen(true)}
+      className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 shadow-sm transition-colors active:bg-secondary/60 md:max-w-md press-scale"
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+        <span className="truncate text-[15px] font-medium">
+          {extractedJob.jobTitle} &middot; {extractedJob.company}
+        </span>
+      </div>
+      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 ml-3" />
+    </button>
   );
 
   const emailForm = (
@@ -332,18 +320,47 @@ export default function EmailEditor() {
 
   if (isDesktop) {
     return (
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-6">
-        {jobSummary}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Review your email</CardTitle>
-            <CardDescription>Edit anything before it goes out — nothing sends without your confirmation.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {emailForm}
-          </CardContent>
-        </Card>
-      </motion.div>
+      <>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Review your application</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Make any final adjustments before sending.</p>
+          </div>
+          {jobChip}
+          <Card>
+            <CardContent className="pt-6">
+              {emailForm}
+            </CardContent>
+          </Card>
+        </motion.div>
+        
+        <BottomSheet open={jdSheetOpen} onOpenChange={setJdSheetOpen} title="Job Details" description="Extracted from your input.">
+          <div className="space-y-4 pt-2 pb-6">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="font-semibold text-lg">{extractedJob.jobTitle}</h3>
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm">
+                  <span className="inline-flex items-center gap-1"><Building2 className="h-3.5 w-3.5" /> {extractedJob.company}</span>
+                  {extractedJob.location && (
+                    <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {extractedJob.location}</span>
+                  )}
+                </div>
+              </div>
+              <Badge variant="accent" className="shrink-0">AI extracted</Badge>
+            </div>
+            
+            <p className="text-[15px] leading-relaxed text-foreground">{extractedJob.summary}</p>
+            
+            {(extractedJob.keyRequirements?.length ?? 0) > 0 && (
+              <ul className="flex flex-wrap gap-1.5 mt-2">
+                {extractedJob.keyRequirements?.map((req) => (
+                  <li key={req}><Badge variant="secondary">{req}</Badge></li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </BottomSheet>
+      </>
     );
   }
 
@@ -353,10 +370,17 @@ export default function EmailEditor() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
-        className="flex-1 overflow-y-auto scroll-momentum px-1 pt-6 pb-[80px]"
+        className="flex-1 overflow-y-auto scroll-momentum px-3 pt-6 pb-[80px] space-y-6"
       >
-        {jobSummary}
-        {emailForm}
+        <div className="px-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Review application</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Make final adjustments before sending.</p>
+        </div>
+        
+        {jobChip}
+        <div className="px-1 pb-6">
+          {emailForm}
+        </div>
       </motion.div>
 
       <div className="fixed left-0 right-0 z-30 border-t border-border bg-card/95 px-5 py-3 shadow-lg backdrop-blur-xl bottom-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom))]">
@@ -396,6 +420,33 @@ export default function EmailEditor() {
             {editing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {editing ? "Applying…" : "Apply Changes"}
           </Button>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet open={jdSheetOpen} onOpenChange={setJdSheetOpen} title="Job Details" description="Extracted from your input.">
+        <div className="space-y-4 pt-2 pb-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="font-semibold text-lg">{extractedJob.jobTitle}</h3>
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm">
+                <span className="inline-flex items-center gap-1"><Building2 className="h-3.5 w-3.5" /> {extractedJob.company}</span>
+                {extractedJob.location && (
+                  <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {extractedJob.location}</span>
+                )}
+              </div>
+            </div>
+            <Badge variant="accent" className="shrink-0">AI extracted</Badge>
+          </div>
+          
+          <p className="text-[15px] leading-relaxed text-foreground">{extractedJob.summary}</p>
+          
+          {(extractedJob.keyRequirements?.length ?? 0) > 0 && (
+            <ul className="flex flex-wrap gap-1.5 mt-2">
+              {extractedJob.keyRequirements?.map((req) => (
+                <li key={req}><Badge variant="secondary">{req}</Badge></li>
+              ))}
+            </ul>
+          )}
         </div>
       </BottomSheet>
     </>

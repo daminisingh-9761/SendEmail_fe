@@ -5,11 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { SkeletonCard } from "@/components/ui/skeleton";
 import { applicationApi } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
-import { Building2, MapPin, Inbox } from "lucide-react";
+import { Building2, MapPin, MailOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import type { Application } from "@/types";
 import { STATUS_VARIANT, STATUS_LABEL } from "@/lib/constants";
 
 export default function HistoryPage() {
+  const navigate = useNavigate();
   const { data: applications, isLoading } = useQuery<Application[]>({
     queryKey: ["applications"],
     queryFn: applicationApi.list,
@@ -30,13 +33,18 @@ export default function HistoryPage() {
         )}
 
         {applications?.length === 0 && (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
-              <Inbox className="h-6 w-6 text-muted-foreground" />
-              <p className="font-medium">No applications yet</p>
-              <p className="text-sm text-muted-foreground">Generate your first one from the home page.</p>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-accent/10">
+              <MailOpen className="h-6 w-6 text-accent" />
+            </div>
+            <h2 className="mt-5 text-[17px] font-semibold text-foreground tracking-tight">No applications yet.</h2>
+            <p className="mt-2 text-[15px] text-muted-foreground max-w-xs leading-relaxed">
+              Every email you send will show up here, so you can track replies and follow-ups.
+            </p>
+            <Button onClick={() => navigate("/")} className="mt-8 rounded-full px-6 shadow-sm press-scale">
+              Start an application
+            </Button>
+          </div>
         )}
 
         {applications?.map((app) => (
