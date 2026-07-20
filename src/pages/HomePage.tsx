@@ -4,8 +4,7 @@ import EmailEditor from "@/components/EmailEditor";
 import { useDraftStore } from "@/store/applicationStore";
 import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
-import { applicationApi } from "@/lib/api";
-import type { Application, HomeLayoutProps } from "@/types";
+import type { HomeLayoutProps } from "@/types";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 import MobileHomeLayout from "@/components/MobileHomeLayout";
@@ -20,25 +19,8 @@ export default function HomePage() {
   const hasOnboarded = typeof window !== "undefined" && localStorage.getItem("mailjob_onboarded") === "true";
   const isReturningUser = !!user && hasOnboarded;
 
-  const { data: applications, isLoading: appsLoading } = useQuery<Application[]>({
-    queryKey: ["applications"],
-    queryFn: applicationApi.list,
-    enabled: isReturningUser,
-  });
-
-  const recentApps = applications?.slice(0, 5) ?? [];
-  const sentThisWeek = applications?.filter((a) => {
-    if (!a.sentAt) return false;
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    return new Date(a.sentAt).getTime() > oneWeekAgo;
-  }).length ?? 0;
-
   const layoutProps: HomeLayoutProps = {
     isReturningUser,
-    applications,
-    appsLoading,
-    sentThisWeek,
-    recentApps,
   };
 
   return (

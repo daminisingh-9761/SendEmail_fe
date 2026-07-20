@@ -56,10 +56,6 @@ export type Application = {
 
 export interface HomeLayoutProps {
   isReturningUser: boolean;
-  applications?: Application[];
-  appsLoading: boolean;
-  sentThisWeek: number;
-  recentApps: Application[];
 }
 
 export interface ProfileSheetProps {

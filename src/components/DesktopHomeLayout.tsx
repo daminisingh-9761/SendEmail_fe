@@ -46,13 +46,7 @@ export default function DesktopHomeLayout({ isReturningUser }: HomeLayoutProps) 
               <JobInputCard />
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.1 }}
-              className="w-full flex flex-col gap-2 mt-4 pl-2"
-            >
-            </motion.div>
+
           </div>
         )}
       </div>
