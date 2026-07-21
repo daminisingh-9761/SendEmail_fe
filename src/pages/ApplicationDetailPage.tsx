@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/utils";
 import { toast } from "@/components/ui/toaster";
 import { RefreshCcw, Sparkles, Send, ArrowLeft } from "lucide-react";
 import type { Application } from "@/types";
+import { STATUS_VARIANT, STATUS_LABEL } from "@/lib/constants";
 
 export default function ApplicationDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -40,7 +41,7 @@ export default function ApplicationDetailPage() {
 
   if (isLoading || !app) {
     return (
-      <div className="mx-auto max-w-2xl px-5 py-6 space-y-4">
+      <div className="w-full mx-auto max-w-2xl px-5 py-6 space-y-4">
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate(-1)}
@@ -57,7 +58,7 @@ export default function ApplicationDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-5 py-6">
+    <div className="w-full mx-auto max-w-2xl space-y-4 px-5 py-6">
       {/* Back nav + title */}
       <div className="flex items-start gap-3">
         <button
@@ -66,9 +67,12 @@ export default function ApplicationDetailPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight truncate">{app.job.jobTitle}</h1>
-          <p className="text-sm text-muted-foreground truncate">{app.job.company} · Sent {app.sentAt ? formatDate(app.sentAt) : "—"}</p>
+        <div className="min-w-0 flex-1 flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold tracking-tight truncate">{app.job.jobTitle}</h1>
+            <p className="text-sm text-muted-foreground truncate">{app.job.company} · Sent {app.sentAt ? formatDate(app.sentAt) : "—"}</p>
+          </div>
+          <Badge variant={STATUS_VARIANT[app.status]} className="shrink-0 mt-1 shadow-sm">{STATUS_LABEL[app.status]}</Badge>
         </div>
       </div>
 
@@ -112,14 +116,13 @@ export default function ApplicationDetailPage() {
         </Card>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-3 pb-4">
+      <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pb-4">
         <Button variant="outline" className="gap-2 press-scale" onClick={() => resend.mutate()} disabled={resend.isPending}>
           <RefreshCcw className="h-4 w-4" /> Resend
         </Button>
         <Button variant="accent" className="gap-2 press-scale" onClick={() => followUp.mutate()} disabled={followUp.isPending}>
           <Send className="h-4 w-4" /> Generate follow-up
         </Button>
-        <Badge variant="success" className="sm:ml-auto self-start sm:self-center">{app.status}</Badge>
       </div>
     </div>
   );

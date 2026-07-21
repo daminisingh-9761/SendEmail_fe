@@ -51,7 +51,10 @@ export const jobApi = {
 
 
 export const applicationApi = {
-  list: () => api.get("/applications").then((r) => r.data),
+  list: (params?: { page?: number; limit?: number; status?: string }) => 
+    api.get("/applications", { params }).then((r) => r.data),
+  bulkDelete: (ids: string[]) => 
+    api.delete("/applications", { data: { ids } }).then((r) => r.data),
   get: (id: string) => api.get(`/applications/${id}`).then((r) => r.data),
   send: (id: string, payload: { recipientEmail: string; subject: string; body: string }) =>
     api.post(`/applications/${id}/send`, payload).then((r) => r.data),
