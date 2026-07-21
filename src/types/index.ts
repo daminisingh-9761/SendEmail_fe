@@ -54,6 +54,12 @@ export type Application = {
   aiSuggestions: string[];
 };
 
+export interface PaginatedApplications {
+  items: Application[];
+  total: number;
+  pages: number;
+}
+
 export interface HomeLayoutProps {
   isReturningUser: boolean;
 }

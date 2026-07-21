@@ -33,3 +33,9 @@ export const HERO_ANIMATION = {
     coral: "#D85A30",
   },
 };
+
+export const HISTORY_FILTERS = [
+  { value: "", label: "All" },
+  { value: "draft", label: "Draft" },
+  { value: "sent", label: "Sent" },
+];
