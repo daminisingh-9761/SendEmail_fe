@@ -38,7 +38,7 @@ export default function HistoryPage() {
     getNextPageParam: (lastPage, allPages) => lastPage.pages > allPages.length ? allPages.length + 1 : undefined,
   });
 
-  const items = data?.pages.flatMap(page => page.items) || [];
+  const items = data?.pages.flatMap(page => page.items || []).filter(Boolean) || [];
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -162,10 +162,10 @@ export default function HistoryPage() {
               <Link to={`/applications/${app.id}`} className="flex-1 min-w-0 py-4 pr-4 sm:py-5 sm:pr-5 pl-2 block focus:outline-none">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-[15px] leading-tight">{app.job.jobTitle}</p>
+                    <p className="truncate font-medium text-[15px] leading-tight">{app.job?.jobTitle || "Unknown Job"}</p>
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1"><Building2 className="h-3 w-3" /> {app.job.company}</span>
-                      {app.job.location && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {app.job.location}</span>}
+                      <span className="inline-flex items-center gap-1"><Building2 className="h-3 w-3" /> {app.job?.company || "Unknown Company"}</span>
+                      {app.job?.location && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {app.job.location}</span>}
                       <span>{formatDate(app.createdAt)}</span>
                     </div>
                   </div>

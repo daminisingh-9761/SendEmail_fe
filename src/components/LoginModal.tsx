@@ -26,7 +26,7 @@ export default function LoginModal() {
         const { user, token } = await authApi.googleLogin({ code: codeResponse.code });
         setSession(user, token);
         closeLogin();
-        toast({ title: `Welcome, ${user.name.split(" ")[0]}`, variant: "success" });
+        toast({ title: `Welcome, ${user.name?.split(" ")[0] || "User"}`, variant: "success" });
 
         const resumes = await resumeApi.list();
         setResumes(resumes);

@@ -7,9 +7,7 @@ import { STATUS_VARIANT, STATUS_LABEL } from "@/lib/constants";
 
 export default function RecentApplicationCard({ app }: RecentApplicationCardProps) {
 
-  const hue = app.job.company
-    .split("")
-    .reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360;
+  const hue = (app.job?.company || "Unknown").split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360;
 
   return (
     <Link to={`/applications/${app.id}`}>
@@ -24,16 +22,18 @@ export default function RecentApplicationCard({ app }: RecentApplicationCardProp
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
           style={{ backgroundColor: `hsl(${hue}, 55%, 52%)` }}
         >
-          {app.job.company.charAt(0).toUpperCase()}
+          {app.job?.company?.charAt(0).toUpperCase() || "?"}
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-semibold truncate leading-tight">{app.job.jobTitle}</p>
-          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 truncate">
-            <Building2 className="h-3 w-3 shrink-0" />
-            {app.job.company}
-          </p>
+          <p className="text-[14px] font-semibold truncate leading-tight">{app.job?.jobTitle || "Unknown Job"}</p>
+          <div className="flex items-center gap-2 mt-1 text-[12px] text-muted-foreground">
+            <span className="truncate flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5" />
+              {app.job?.company || "Unknown Company"}
+            </span>
+          </div>
         </div>
 
         {/* Status + time */}

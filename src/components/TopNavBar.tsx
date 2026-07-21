@@ -46,13 +46,15 @@ export default function TopNavBar() {
           New application
         </button>
         
-        <Link 
-          to="/history" 
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-[14px] font-medium transition-colors"
-        >
-          <Clock className="h-4 w-4" />
-          History
-        </Link>
+        {user && (
+          <Link 
+            to="/history" 
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-[14px] font-medium transition-colors"
+          >
+            <Clock className="h-4 w-4" />
+            History
+          </Link>
+        )}
 
         {user ? (
           <DropdownMenu>
@@ -61,14 +63,14 @@ export default function TopNavBar() {
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/15 text-accent font-medium text-xs">
                   {user.name?.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-sm font-medium text-foreground">{user.name.split(" ")[0]}</span>
+                <span className="text-sm font-medium text-foreground">{user.name?.split(" ")[0] || "User"}</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 mt-1">
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user.name}</p>
-                  <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                  <p className="text-sm font-medium leading-none">{user.name || "User"}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{user.email || "No email"}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import LoginModal from "@/components/LoginModal";
 import ResumeModal from "@/components/ResumeModal";
 import InstallBanner from "@/components/InstallBanner";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export default function App() {
@@ -20,8 +21,10 @@ export default function App() {
       <main className={`flex-1 flex flex-col relative overflow-hidden ${!isDesktop ? "pb-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom))]" : ""}`}>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/applications/:id" element={<ApplicationDetailPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/history" element={<HistoryPage />} />
+            <Route path="/applications/:id" element={<ApplicationDetailPage />} />
+          </Route>
         </Routes>
       </main>
       {!isDesktop && <BottomTabBar />}

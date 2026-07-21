@@ -68,9 +68,9 @@ export default function ApplicationDetailPage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="min-w-0 flex-1 flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-xl font-semibold tracking-tight truncate">{app.job.jobTitle}</h1>
-            <p className="text-sm text-muted-foreground truncate">{app.job.company} · Sent {app.sentAt ? formatDate(app.sentAt) : "—"}</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-semibold tracking-tight truncate">{app.job?.jobTitle || "Unknown Job"}</h1>
+            <p className="text-sm text-muted-foreground truncate">{app.job?.company || "Unknown Company"} · Sent {app.sentAt ? formatDate(app.sentAt) : "—"}</p>
           </div>
           <Badge variant={STATUS_VARIANT[app.status]} className="shrink-0 mt-1 shadow-sm">{STATUS_LABEL[app.status]}</Badge>
         </div>

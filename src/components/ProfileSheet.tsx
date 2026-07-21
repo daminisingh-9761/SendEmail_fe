@@ -27,7 +27,7 @@ export default function ProfileSheet({ open, onOpenChange }: ProfileSheetProps) 
       try {
         const { user, token } = await authApi.googleLogin({ code: codeResponse.code });
         setSession(user, token);
-        toast({ title: `Welcome, ${user.name.split(" ")[0]}`, variant: "success" });
+        toast({ title: `Welcome, ${user.name?.split(" ")[0] || "User"}`, variant: "success" });
         const resumes = await resumeApi.list();
         setResumes(resumes);
       } catch {
@@ -59,8 +59,8 @@ export default function ProfileSheet({ open, onOpenChange }: ProfileSheetProps) 
               {user.name?.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-[15px] truncate">{user.name}</p>
-              <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+              <p className="font-semibold text-[15px] truncate">{user.name || "User"}</p>
+              <p className="text-sm text-muted-foreground truncate">{user.email || "No email"}</p>
             </div>
           </div>
 
