@@ -4,6 +4,7 @@ import { useDraftStore } from "@/store/applicationStore";
 import { useResumeStore } from "@/store/resumeStore";
 import { useUiStore } from "@/store/uiStore";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
 import { useState } from "react";
 import ProfileSheet from "@/components/ProfileSheet";
 
@@ -16,6 +17,9 @@ export default function BottomTabBar() {
   const clearSelectedResume = useResumeStore((s) => s.clearSelectedResume);
   const { incrementSessionKey } = useUiStore();
   const [profileOpen, setProfileOpen] = useState(false);
+  const { user } = useAuthStore();
+
+  const visibleTabs = tabs.filter(tab => tab.id !== "history" || !!user);
 
   function handleTabPress(tab: (typeof tabs)[number]) {
 
@@ -61,7 +65,7 @@ export default function BottomTabBar() {
         aria-label="Main navigation"
       >
         <div className="flex items-stretch justify-around max-w-lg mx-auto">
-          {tabs.map((tab) => {
+          {visibleTabs.map((tab) => {
             const isActive = getIsActive(tab);
             const Icon = tab.icon;
             return (
