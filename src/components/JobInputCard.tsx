@@ -26,7 +26,7 @@ function BaseJobInput({ isDesktop }: { isDesktop: boolean }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { resumeModalOpen, openResumeModal } = useUiStore();
-  const { resumes } = useResumeStore();
+  const { resumes, selectedResumeId } = useResumeStore();
   const [waitingForResume, setWaitingForResume] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -44,14 +44,15 @@ function BaseJobInput({ isDesktop }: { isDesktop: boolean }) {
   });
 
   function handleGenerate() {
+    const hasDefaultResume = resumes.some(r => r.isDefault);
     if (file) {
-      if (resumes.length === 0) setWaitingForResume(true);
+      if (!selectedResumeId && !hasDefaultResume) setWaitingForResume(true);
       generate({ type: "file", file });
     } else {
       const input = text.trim();
       const isUrl = /^(https?:\/\/[^\s]+)$/i.test(input);
       
-      if (resumes.length === 0) setWaitingForResume(true);
+      if (!selectedResumeId && !hasDefaultResume) setWaitingForResume(true);
       
       if (isUrl) {
         generate({ type: "url", url: input });
@@ -62,11 +63,11 @@ function BaseJobInput({ isDesktop }: { isDesktop: boolean }) {
   }
 
   useEffect(() => {
-    if (waitingForResume && !resumeModalOpen && resumes.length > 0) {
+    if (waitingForResume && !resumeModalOpen && (selectedResumeId || resumes.some(r => r.isDefault))) {
       setWaitingForResume(false);
       handleGenerate();
     }
-  }, [resumeModalOpen, resumes.length, waitingForResume]);
+  }, [resumeModalOpen, selectedResumeId, resumes, waitingForResume]);
 
   useEffect(() => {
     const focusInput = () => textareaRef.current?.focus();

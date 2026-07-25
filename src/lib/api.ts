@@ -31,6 +31,7 @@ export const resumeApi = {
       .then((r) => r.data);
   },
   setDefault: (id: string) => api.patch(`/resumes/${id}/default`).then((r) => r.data),
+  delete: (id: string) => api.delete(`/resumes/${id}`).then((r) => r.data),
 };
 
 
