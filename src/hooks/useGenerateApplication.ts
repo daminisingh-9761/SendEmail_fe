@@ -26,8 +26,9 @@ export function useGenerateApplication() {
         return;
       }
 
-      if (resumes.length === 0) {
+      if (!selectedResumeId && !resumes.some(r => r.isDefault)) {
         openResumeModal("generate");
+        toast({ title: "Select a resume", description: "Please select a resume or set a default resume.", variant: "error" });
         return;
       }
 
@@ -36,7 +37,12 @@ export function useGenerateApplication() {
         const job = await jobApi.extract(input);
         setExtractedJob(job);
 
-        const email = await jobApi.generateEmail({ jobId: job.id });
+        const payload: any = { jobId: job.id };
+        if (selectedResumeId) {
+          payload.resumeId = selectedResumeId;
+        }
+
+        const email = await jobApi.generateEmail(payload);
         setGeneratedEmail(email);
         setRecipientEmail(job.hrEmail ?? "");
 

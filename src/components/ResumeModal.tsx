@@ -7,12 +7,12 @@ import { useUiStore } from "@/store/uiStore";
 import { useResumeStore } from "@/store/resumeStore";
 import { resumeApi } from "@/lib/api";
 import { toast } from "@/components/ui/toaster";
-import { FileText, UploadCloud, CheckCircle2, Loader2 } from "lucide-react";
+import { FileText, UploadCloud, CheckCircle2, Loader2, Trash2, Circle, CircleDot } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 
 export default function ResumeModal() {
   const { resumeModalOpen, closeResumeModal, pendingAction, clearPending } = useUiStore();
-  const { resumes, selectedResumeId, selectResume, setResumes } = useResumeStore();
+  const { resumes, selectedResumeId, selectResume, setResumes, clearSelectedResume } = useResumeStore();
   const [uploading, setUploading] = useState(false);
   const [fetching, setFetching] = useState(false);
 
@@ -23,17 +23,6 @@ export default function ResumeModal() {
       resumeApi.list()
         .then((data) => {
           setResumes(data);
-          
-
-          if (!selectedResumeId && data.length > 0) {
-            const defaultResume = data.find((r: any) => r.isDefault);
-            if (defaultResume) {
-              selectResume(defaultResume.id);
-            } else {
-              const latest = [...data].sort((a: any, b: any) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())[0];
-              if (latest) selectResume(latest.id);
-            }
-          }
         })
         .catch(() => toast({ title: "Error", description: "Failed to load resumes", variant: "error" }))
         .finally(() => setFetching(false));
@@ -46,12 +35,8 @@ export default function ResumeModal() {
     setUploading(true);
     try {
       const resume = await resumeApi.upload(file);
-      await resumeApi.setDefault(resume.id);
-      
-
       const updatedResumes = await resumeApi.list();
       setResumes(updatedResumes);
-      selectResume(resume.id);
       
       toast({ title: "Resume uploaded", description: file.name, variant: "success" });
 
@@ -64,7 +49,35 @@ export default function ResumeModal() {
     } finally {
       setUploading(false);
     }
-  }, [setResumes, selectResume, pendingAction, closeResumeModal, clearPending]);
+  }, [setResumes, pendingAction, closeResumeModal, clearPending]);
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this resume?")) return;
+    try {
+      await resumeApi.delete(id);
+      const updatedResumes = await resumeApi.list();
+      setResumes(updatedResumes);
+      if (selectedResumeId === id) {
+        useResumeStore.getState().clearSelectedResume();
+      }
+      toast({ title: "Resume deleted", variant: "success" });
+    } catch {
+      toast({ title: "Failed to delete resume", variant: "error" });
+    }
+  };
+
+  const handleSetDefault = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      await resumeApi.setDefault(id);
+      const updatedResumes = await resumeApi.list();
+      setResumes(updatedResumes);
+      toast({ title: "Default resume updated", variant: "success" });
+    } catch {
+      toast({ title: "Failed to set default resume", variant: "error" });
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -86,7 +99,9 @@ export default function ResumeModal() {
 
   const sheetDescription = resumes.length === 0
     ? "We'll attach this to every application you send. You can replace it any time."
-    : "Use your saved resume, or upload a new version for this application.";
+    : "Select a resume for this application, or set a default one.";
+
+  const hasDefaultResume = resumes.some((r: any) => r.isDefault);
 
   return (
     <ResponsiveModal
@@ -105,26 +120,47 @@ export default function ResumeModal() {
           {resumes.map((r) => (
             <button
               key={r.id}
-              onClick={() => selectResume(r.id)}
+              onClick={() => {
+                if (selectedResumeId === r.id) {
+                  clearSelectedResume();
+                } else {
+                  selectResume(r.id);
+                }
+              }}
               className={cn(
                 "flex items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors min-h-[48px]",
                 "active:bg-secondary/80 active:scale-[0.99]",
                 selectedResumeId === r.id ? "border-accent bg-accent/5" : "border-border"
               )}
             >
-              <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-medium">{r.fileName}</p>
-                  {r.isDefault && (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">
-                      Default
-                    </Badge>
-                  )}
+              <div className="flex-1 min-w-0 flex items-center gap-3">
+                <button
+                  onClick={(e) => handleSetDefault(e, r.id)}
+                  className="text-muted-foreground hover:text-accent transition-colors shrink-0 p-1 rounded-full hover:bg-accent/10"
+                  title="Set as Default"
+                >
+                  {r.isDefault ? <CircleDot className="h-4 w-4 text-accent" /> : <Circle className="h-4 w-4" />}
+                </button>
+                <FileText className="h-4 w-4 shrink-0 text-muted-foreground hidden sm:block" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium">{r.fileName}</p>
+                    {r.isDefault && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 font-normal">
+                        Default
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">Uploaded {formatDate(r.uploadedAt)}</p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">Uploaded {formatDate(r.uploadedAt)}</p>
               </div>
               {selectedResumeId === r.id && <CheckCircle2 className="h-4 w-4 shrink-0 text-accent" />}
+              <button
+                onClick={(e) => handleDelete(e, r.id)}
+                className="ml-2 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors shrink-0"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </button>
           ))}
         </div>
@@ -149,7 +185,7 @@ export default function ResumeModal() {
       <Button
         className="mt-5 w-full press-scale"
         variant="accent"
-        disabled={!selectedResumeId || uploading || fetching}
+        disabled={(!selectedResumeId && !hasDefaultResume) || uploading || fetching}
         onClick={handleContinue}
       >
         Continue
