@@ -11,12 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { SkeletonEmailDraft } from "@/components/ui/skeleton";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { ResponsiveModal } from "@/components/ui/responsive-modal";
 import { useDraftStore } from "@/store/applicationStore";
 import { useResumeStore } from "@/store/resumeStore";
 import { useAuthStore } from "@/store/authStore";
-import { applicationApi, authApi } from "@/lib/api";
+import { applicationApi, authApi, resumeApi } from "@/lib/api";
 import { toast } from "@/components/ui/toaster";
-import { Send, Paperclip, MapPin, Building2, AlertCircle, Loader2, Mail, Sparkles, RefreshCcw, ChevronRight, FileText } from "lucide-react";
+import { Send, Paperclip, MapPin, Building2, AlertCircle, Loader2, Mail, Sparkles, RefreshCcw, ChevronRight, FileText, Download, ExternalLink } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 import { useUiStore } from "@/store/uiStore";
@@ -43,6 +44,12 @@ export default function EmailEditor() {
   const [editing, setEditing] = useState(false);
   const [aiSheetOpen, setAiSheetOpen] = useState(false);
   const [jdSheetOpen, setJdSheetOpen] = useState(false);
+  
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
+
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   
@@ -71,7 +78,7 @@ export default function EmailEditor() {
     onError: () => toast({ title: "Gmail connection failed", variant: "error" }),
   });
 
-  const resume = resumes.find((r) => r.id === selectedResumeId);
+  const resume = resumes.find((r) => r.id === selectedResumeId) || resumes.find((r: any) => r.isDefault);
 
   const {
     register,
@@ -181,6 +188,22 @@ export default function EmailEditor() {
     formRef.current?.requestSubmit();
   }
 
+  async function handlePreviewResume() {
+    if (!resume) return;
+    setPreviewOpen(true);
+    setPreviewUrl(null);
+    setPreviewError(false);
+    setPreviewLoading(true);
+    try {
+      const data = await resumeApi.getPreview(resume.id);
+      setPreviewUrl(data.previewUrl);
+    } catch {
+      setPreviewError(true);
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
 
 
   const jobChip = (
@@ -264,13 +287,18 @@ export default function EmailEditor() {
       </div>
 
       {/* Resume attachment */}
-      <div className="flex items-center justify-between rounded-xl border border-border bg-secondary/30 px-3 py-2.5">
-        <span className="flex items-center gap-2 text-sm">
-          <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+      <button
+        type="button"
+        onClick={handlePreviewResume}
+        disabled={!resume}
+        className="flex w-full items-center justify-between rounded-xl border border-border bg-secondary/30 px-3 py-2.5 transition-colors hover:bg-secondary/50 active:bg-secondary/70 focus:outline-none focus:ring-2 focus:ring-accent/50 press-scale"
+      >
+        <span className="flex items-center gap-2 text-sm min-w-0">
+          <Paperclip className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           <span className="truncate">{resume?.fileName ?? "No resume selected"}</span>
         </span>
-        <Badge variant="outline" className="shrink-0 text-[10px]">Attached</Badge>
-      </div>
+        <Badge variant="outline" className="shrink-0 text-[10px]">Preview</Badge>
+      </button>
 
       {/* Inline AI Edit for Desktop */}
       {isDesktop && (
@@ -325,6 +353,65 @@ export default function EmailEditor() {
     </form>
   );
 
+  const previewModal = (
+    <ResponsiveModal
+      open={previewOpen}
+      onOpenChange={(open) => {
+        setPreviewOpen(open);
+        if (!open) {
+          setTimeout(() => {
+            setPreviewUrl(null);
+            setPreviewError(false);
+          }, 300); // Give it time to animate out
+        }
+      }}
+      title={resume?.fileName ?? "Resume Preview"}
+      desktopClassName="sm:max-w-5xl md:max-w-6xl w-[95vw]"
+    >
+      <div className="flex flex-col gap-4">
+        {previewLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
+            <p className="text-sm text-muted-foreground">Loading preview...</p>
+          </div>
+        ) : previewError ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <AlertCircle className="h-10 w-10 text-destructive mb-3" />
+            <p className="text-sm font-medium">Unable to preview this resume.</p>
+            <p className="text-xs text-muted-foreground mt-1 mb-6">You can download it instead.</p>
+          </div>
+        ) : resume?.fileName?.toLowerCase().match(/\.(doc|docx)$/) ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <FileText className="h-10 w-10 text-muted-foreground mb-3" />
+            <p className="text-sm font-medium">Preview unavailable for DOC/DOCX files.</p>
+            <p className="text-xs text-muted-foreground mt-1 mb-6">Please download or open it to view.</p>
+          </div>
+        ) : previewUrl ? (
+          <div className="w-full bg-secondary/20 rounded-md overflow-hidden border border-border h-[80vh] min-h-[500px]">
+            <iframe src={previewUrl} className="w-full h-full border-0" title="Resume Preview" />
+          </div>
+        ) : null}
+
+        {previewUrl && (
+          <div className="flex justify-end gap-3 mt-2">
+            <Button variant="outline" asChild>
+              <a href={previewUrl} download target="_blank" rel="noopener noreferrer">
+                <Download className="mr-2 h-4 w-4" />
+                Download
+              </a>
+            </Button>
+            <Button variant="accent" asChild>
+              <a href={previewUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Open in New Tab
+              </a>
+            </Button>
+          </div>
+        )}
+      </div>
+    </ResponsiveModal>
+  );
+
   if (isDesktop) {
     return (
       <>
@@ -367,6 +454,7 @@ export default function EmailEditor() {
             )}
           </div>
         </BottomSheet>
+        {previewModal}
       </>
     );
   }
@@ -405,6 +493,8 @@ export default function EmailEditor() {
           )}
         </div>
       </div>
+
+      {previewModal}
 
       <BottomSheet open={aiSheetOpen} onOpenChange={setAiSheetOpen} title="AI Instructions" description="Tell the AI how to revise the email — e.g. make it shorter, more professional, mention a specific skill.">
         <div className="space-y-3">
