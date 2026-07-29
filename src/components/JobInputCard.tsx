@@ -24,11 +24,11 @@ function BaseJobInput({ isDesktop }: { isDesktop: boolean }) {
   const { generate, loading } = useGenerateApplication();
   const [attachSheetOpen, setAttachSheetOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
+
   const { resumeModalOpen, openResumeModal } = useUiStore();
   const { resumes, selectedResumeId } = useResumeStore();
   const [waitingForResume, setWaitingForResume] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,22 +43,29 @@ function BaseJobInput({ isDesktop }: { isDesktop: boolean }) {
     noClick: true,
   });
 
-  function handleGenerate() {
+  async function handleGenerate() {
     const hasDefaultResume = resumes.some(r => r.isDefault);
+    let success = false;
     if (file) {
       if (!selectedResumeId && !hasDefaultResume) setWaitingForResume(true);
-      generate({ type: "file", file });
+      success = await generate({ type: "file", file }) as unknown as boolean;
     } else {
       const input = text.trim();
       const isUrl = /^(https?:\/\/[^\s]+)$/i.test(input);
-      
+
       if (!selectedResumeId && !hasDefaultResume) setWaitingForResume(true);
-      
+
       if (isUrl) {
-        generate({ type: "url", url: input });
+        success = await generate({ type: "url", url: input }) as unknown as boolean;
       } else {
-        generate({ type: "text", text: input });
+        success = await generate({ type: "text", text: input }) as unknown as boolean;
       }
+    }
+
+    if (success) {
+      setText("");
+      setFile(null);
+      setTimeout(resizeTextarea, 0);
     }
   }
 

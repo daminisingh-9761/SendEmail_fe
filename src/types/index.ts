@@ -33,6 +33,13 @@ export type ExtractedJob = {
   keyRequirements: string[];
   sourceType: JobInputType;
   sourceRaw: string;
+  responseType?: "email" | "chat";
+  chatResponse?: string | null;
+};
+
+export type ChatMessage = {
+  role: "user" | "ai";
+  content: string;
 };
 
 export type GeneratedEmail = {
@@ -87,9 +94,12 @@ export type DraftState = {
   extractedJob: ExtractedJob | null;
   generatedEmail: GeneratedEmail | null;
   recipientEmail: string;
+  chatMessages: ChatMessage[];
   setExtractedJob: (j: ExtractedJob | null) => void;
   setGeneratedEmail: (e: GeneratedEmail | null) => void;
   setRecipientEmail: (e: string) => void;
+  addChatMessage: (msg: ChatMessage) => void;
+  removeLastChatMessage: () => void;
   reset: () => void;
 };
 

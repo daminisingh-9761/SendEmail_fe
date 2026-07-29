@@ -1,7 +1,6 @@
 import { useAuthStore } from "@/store/authStore";
-import { useUiStore } from "@/store/uiStore";
 import { BottomSheet, ActionSheetItem } from "@/components/ui/bottom-sheet";
-import { FileText, LogOut, Mail } from "lucide-react";
+import { LogOut, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGoogleLogin } from "@react-oauth/google";
 import { authApi, resumeApi } from "@/lib/api";
@@ -12,7 +11,6 @@ import { ProfileSheetProps } from "@/types";
 
 export default function ProfileSheet({ open, onOpenChange }: ProfileSheetProps) {
   const { user, logout, setSession } = useAuthStore();
-  const { openResumeModal } = useUiStore();
   const { setResumes } = useResumeStore();
 
   const login = useGoogleLogin({
@@ -43,12 +41,6 @@ export default function ProfileSheet({ open, onOpenChange }: ProfileSheetProps) 
     onOpenChange(false);
   }
 
-  function handleManageResumes() {
-    onOpenChange(false);
-
-    setTimeout(() => openResumeModal(), 200);
-  }
-
   return (
     <BottomSheet open={open} onOpenChange={onOpenChange} title="Profile">
       {user ? (
@@ -63,15 +55,6 @@ export default function ProfileSheet({ open, onOpenChange }: ProfileSheetProps) 
               <p className="text-sm text-muted-foreground truncate">{user.email || "No email"}</p>
             </div>
           </div>
-
-          <div className="h-px bg-border my-1" />
-
-          <ActionSheetItem
-            icon={<FileText className="h-5 w-5" />}
-            label="Manage Resumes"
-            subtitle="Upload, view, or change your default resume"
-            onClick={handleManageResumes}
-          />
 
           <div className="h-px bg-border my-1" />
 

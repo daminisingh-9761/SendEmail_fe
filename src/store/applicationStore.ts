@@ -5,10 +5,13 @@ export const useDraftStore = create<DraftState>((set) => ({
   extractedJob: null,
   generatedEmail: null,
   recipientEmail: "",
+  chatMessages: [],
   setExtractedJob: (extractedJob) => set({ extractedJob }),
   setGeneratedEmail: (generatedEmail) => set({ generatedEmail }),
   setRecipientEmail: (recipientEmail) => set({ recipientEmail }),
-  reset: () => set({ extractedJob: null, generatedEmail: null, recipientEmail: "" }),
+  addChatMessage: (msg) => set((s) => ({ chatMessages: [...s.chatMessages, msg] })),
+  removeLastChatMessage: () => set((s) => ({ chatMessages: s.chatMessages.slice(0, -1) })),
+  reset: () => set({ extractedJob: null, generatedEmail: null, recipientEmail: "", chatMessages: [] }),
 }));
 
 export const useApplicationsStore = create<ApplicationsState>((set) => ({

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Mail, Clock, LogOut, FileText } from "lucide-react";
+import { Mail, Clock, LogOut } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
 import { useDraftStore } from "@/store/applicationStore";
@@ -14,7 +14,7 @@ import {
 
 export default function TopNavBar() {
   const { user, logout } = useAuthStore();
-  const { openLogin, openResumeModal, incrementSessionKey } = useUiStore();
+  const { openLogin, incrementSessionKey } = useUiStore();
   const resetDraft = useDraftStore((s) => s.reset);
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -73,10 +73,6 @@ export default function TopNavBar() {
                   <p className="text-xs leading-none text-muted-foreground">{user.email || "No email"}</p>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => openResumeModal()}>
-                <FileText className="mr-2 h-4 w-4" /> Resumes
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="text-destructive">
                 <LogOut className="mr-2 h-4 w-4" /> Sign out
