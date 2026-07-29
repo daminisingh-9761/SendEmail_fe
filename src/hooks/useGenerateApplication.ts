@@ -26,7 +26,9 @@ export function useGenerateApplication() {
         return false;
       }
 
-      if (!selectedResumeId && !resumes.some(r => r.isDefault)) {
+      const isDefinitelyJob = input.type === "url" || input.type === "file";
+
+      if (isDefinitelyJob && !selectedResumeId && !resumes.some(r => r.isDefault)) {
         openResumeModal("generate");
         toast({ title: "Select a resume", description: "Please select a resume or set a default resume.", variant: "error" });
         return false;
@@ -48,6 +50,13 @@ export function useGenerateApplication() {
           addChatMessage({ role: "ai", content: job.chatResponse || "No response provided" });
           setLoading(false);
           return true;
+        }
+
+        if (!selectedResumeId && !resumes.some(r => r.isDefault)) {
+          openResumeModal("generate");
+          toast({ title: "Select a resume", description: "Please select a resume or set a default resume.", variant: "error" });
+          removeLastChatMessage();
+          return false;
         }
 
         setExtractedJob(job);

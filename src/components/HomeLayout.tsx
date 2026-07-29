@@ -50,7 +50,7 @@ export default function HomeLayout() {
                   className={cn(
                     "p-4 rounded-2xl max-w-[85%] text-left",
                     msg.role === "user"
-                      ? "bg-accent/10 self-end ml-auto text-accent-foreground"
+                      ? "bg-[#e65c00] self-end ml-auto text-white font-medium shadow-sm"
                       : "bg-muted self-start mr-auto text-foreground"
                   )}
                 >
